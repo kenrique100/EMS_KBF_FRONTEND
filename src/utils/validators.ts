@@ -1,15 +1,18 @@
-export const validateEmployee = (data, isNew = false) => {
-    const errors = {};
+// src/utils/validation.ts
+import { CreateTaskDTO, EmployeeFormData, SalaryFormData, ValidationErrors } from '@/utils/types';
 
-    if (isNew && !data.username) {
+export const validateEmployee = (data: EmployeeFormData, isNew = false): ValidationErrors => {
+    const errors: ValidationErrors = {};
+
+    if (isNew && !data.username?.trim()) {
         errors.username = 'Username is required';
     }
 
-    if (!data.name) {
+    if (!data.name?.trim()) {
         errors.name = 'Name is required';
     }
 
-    if (isNew && !data.password) {
+    if (isNew && !data.password?.trim()) {
         errors.password = 'Password is required';
     }
 
@@ -20,15 +23,15 @@ export const validateEmployee = (data, isNew = false) => {
     return errors;
 };
 
-export const validateTask = (data) => {
-    const errors = {};
+export const validateSalary = (data: SalaryFormData): ValidationErrors => {
+    const errors: ValidationErrors = {};
 
-    if (!data.title) {
-        errors.title = 'Title is required';
+    if (!data.amount || Number(data.amount) <= 0) {
+        errors.amount = 'Amount must be greater than 0';
     }
 
-    if (!data.deadline) {
-        errors.deadline = 'Deadline is required';
+    if (!data.paymentDate) {
+        errors.paymentDate = 'Payment date is required';
     }
 
     if (!data.employeeId) {
@@ -38,18 +41,18 @@ export const validateTask = (data) => {
     return errors;
 };
 
-export const validateSalary = (data) => {
-    const errors = {};
+export const validateTask = (data: CreateTaskDTO): ValidationErrors => {
+    const errors: ValidationErrors = {};
 
-    if (!data.amount || data.amount <= 0) {
-        errors.amount = 'Amount must be greater than 0';
+    if (!data.title?.trim()) {
+        errors.title = 'Title is required';
     }
 
-    if (!data.paymentDate) {
-        errors.paymentDate = 'Payment date is required';
+    if (!data.deadline) {
+        errors.deadline = 'Deadline is required';
     }
 
-    if (!data.employeeId) {
+    if (!data.employeeId?.trim()) {
         errors.employeeId = 'Employee is required';
     }
 

@@ -1,15 +1,27 @@
-import { CircularProgress, Box } from '@mui/material';
+import { CircularProgress, Box, Typography } from '@mui/material';
 
-const LoadingSpinner = () => {
+interface LoadingSpinnerProps {
+    message?: string;
+    fullScreen?: boolean;
+}
+
+const LoadingSpinner = ({ message, fullScreen = true }: LoadingSpinnerProps) => {
     return (
-        <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight="100vh"
-        >
-            <CircularProgress />
-        </Box>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight={fullScreen ? '100vh' : '100%'}
+        p={4}
+      >
+          <CircularProgress size={60} thickness={4} />
+          {message && (
+            <Typography variant="body1" mt={2}>
+                {message}
+            </Typography>
+          )}
+      </Box>
     );
 };
 

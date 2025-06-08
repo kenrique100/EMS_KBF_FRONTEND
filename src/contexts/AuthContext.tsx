@@ -1,78 +1,107 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getAuthToken, setAuthToken, clearAuthToken } from '@/utils/auth';
+import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useNotification } from '@/contexts/NotificationContext';
+import { refreshToken } from '@/api/auth';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
-type AuthContextType = {
-    user: { username: string } | null;
-    isAuthenticated: boolean;
-    isAdmin: boolean;
-    isLoading: boolean;
-    login: (username: string, password: string) => Promise<void>;
-    logout: () => void;
-};
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  role: 'ADMIN' | 'USER';
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  isLoading: boolean;
+  login: (user: User, accessToken: string, refreshToken: string) => void;
+  logout: () => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-type Props = {
-    children: ReactNode;
-};
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-// Simulated login API
-const loginApi = async (username: string, password: string): Promise<{ accessToken: string }> => {
-    // Replace this with real API call
-    return Promise.resolve({
-        accessToken: 'fake-jwt-token', // Should include valid JWT for real use
-    });
-};
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { showNotification } = useNotification();
 
-export const AuthProvider = ({ children }: Props) => {
-    const [user, setUser] = useState<{ username: string } | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      const refresh = localStorage.getItem('refreshToken');
 
-    useEffect(() => {
-        const token = getAuthToken();
-        if (token) {
+      if (token && refresh) {
+        try {
+          // Verify token isn't expired
+          const decoded = jwtDecode<{ exp: number; user: User }>(token);
+          if (decoded.exp * 1000 < Date.now()) {
+            // Token expired, try to refresh
             try {
-                const decoded: any = jwtDecode(token);
-                setUser({ username: decoded.sub });
-                setIsAuthenticated(true);
-                setIsAdmin(decoded.roles?.includes('ROLE_ADMIN') || false);
-            } catch (error) {
-                clearAuthToken();
+              const { accessToken, user } = await refreshToken(refresh);
+              localStorage.setItem('accessToken', accessToken);
+              setUser(user);
+            } catch (refreshError) {
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
             }
+          } else {
+            setUser(decoded.user);
+          }
+        } catch (error) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
         }
-        setIsLoading(false);
-    }, []);
-
-    const login = async (username: string, password: string) => {
-        const { accessToken } = await loginApi(username, password);
-        setAuthToken(accessToken);
-        const decoded: any = jwtDecode(accessToken);
-        setUser({ username: decoded.sub });
-        setIsAuthenticated(true);
-        setIsAdmin(decoded.roles?.includes('ROLE_ADMIN') || false);
+      }
+      setIsLoading(false);
     };
 
-    const logout = () => {
-        clearAuthToken();
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsAdmin(false);
-    };
+    initializeAuth();
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, isLoading, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const login = (userData: User, accessToken: string, refreshToken: string) => {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    setUser(userData);
+    showNotification('Login successful', 'success');
+  };
+
+  const logout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    setUser(null);
+    showNotification('Logged out successfully', 'info');
+  };
+
+  const value = useMemo(() => ({
+    user,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === 'ADMIN',
+    isLoading,
+    login,
+    logout,
+  }), [user, isLoading]);
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = (): AuthContextType => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

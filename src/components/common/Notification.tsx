@@ -1,25 +1,27 @@
-import { Alert, Snackbar } from '@mui/material';
-import { useNotification } from '@/hooks/useNotification';
+import React from 'react';
+import { useNotification } from '@/contexts/NotificationContext';
+import { Snackbar, Alert } from '@mui/material';
 
 const Notification = () => {
-    const { notification, hideNotification } = useNotification();
+  const { notification, hideNotification } = useNotification();
 
-    return (
-        <Snackbar
-            open={notification.open}
-            autoHideDuration={6000}
-            onClose={hideNotification}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-            <Alert
-                onClose={hideNotification}
-                severity={notification.type}
-                sx={{ width: '100%' }}
-            >
-                {notification.message}
-            </Alert>
-        </Snackbar>
-    );
+  return (
+    <Snackbar
+      open={notification.open}
+      autoHideDuration={6000}
+      onClose={hideNotification}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert
+        onClose={hideNotification}
+        severity={notification.type}
+        variant="filled"
+        sx={{ width: '100%' }}
+      >
+        {notification.message}
+      </Alert>
+    </Snackbar>
+  );
 };
 
 export default Notification;

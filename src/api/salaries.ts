@@ -1,34 +1,27 @@
+// src/api/salaries.ts
 import api from '../config/axios';
-
-interface Salary {
-    id: number;
-    amount: number;
-    paymentDate: string;
-    employeeId: number;
-    status: string;
-    paymentReference: string;
-}
+import { Salary, CreateSalaryPayload } from '@/utils/types';
 
 export const getSalaries = async (): Promise<Salary[]> => {
-    const response = await api.get('/salaries');
+    const response = await api.get('/api/salaries');
     return response.data;
 };
 
-export const getSalaryById = async (id: number): Promise<Salary> => {
-    const response = await api.get(`/salaries/${id}`);
+export const getSalaryById = async (id: string): Promise<Salary> => {
+    const response = await api.get(`/api/salaries/${id}`);
     return response.data;
 };
 
-export const getSalariesByEmployee = async (employeeId: number): Promise<Salary[]> => {
-    const response = await api.get(`/salaries/employee/${employeeId}`);
+export const getSalariesByEmployee = async (employeeId: string): Promise<Salary[]> => {
+    const response = await api.get(`/api/salaries/employee/${employeeId}`);
     return response.data;
 };
 
-export const createSalary = async (salaryData: Omit<Salary, 'id'>): Promise<Salary> => {
-    const response = await api.post('/salaries', salaryData);
+export const createSalary = async (salaryData: CreateSalaryPayload): Promise<Salary> => {
+    const response = await api.post('/api/salaries', salaryData);
     return response.data;
 };
 
-export const deleteSalary = async (id: number): Promise<void> => {
-    await api.delete(`/salaries/${id}`);
+export const deleteSalary = async (id: string): Promise<void> => {
+    await api.delete(`/api/salaries/${id}`);
 };

@@ -1,13 +1,18 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 
-const AdminRoute = () => {
-    const { isAdmin, isLoading } = useAuth();
+interface AdminRouteProps {
+    children: ReactNode;
+}
 
-    if (isLoading) return <LoadingSpinner />;
+const AdminRoute = ({ children }: AdminRouteProps) => {
+    const { user, isLoading } = useAuth();
 
-    return isAdmin ? <Outlet /> : <Navigate to="/unauthorized" replace />;
+    if (isLoading) return null;
+    if (!user || user.role !== 'ADMIN') return <Navigate to="/unauthorized" replace />;
+
+    return children;
 };
 
 export default AdminRoute;

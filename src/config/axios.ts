@@ -1,27 +1,57 @@
-import axios from 'axios';
-import { getAuthToken } from '../utils/auth';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { API_ENDPOINTS } from '@/utils/constants';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-api.interceptors.request.use((config) => {
-    const token = getAuthToken();
-    if (token) {
-        config.headers.Authorization = `Basic ${token}`;
-    }
-    return config;
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            // Handle unauthorized access
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) throw new Error('No refresh token');
+
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
+          { refreshToken }
+        );
+
+        const { accessToken } = response.data;
+        localStorage.setItem('accessToken', accessToken);
+
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+        return api(originalRequest);
+      } catch (err) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return Promise.reject(err);
+      }
     }
+
+    return Promise.reject(error);
+  }
 );
 
 export default api;

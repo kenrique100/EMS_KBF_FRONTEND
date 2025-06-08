@@ -1,78 +1,110 @@
-import { useState, ChangeEvent, FormEvent } from 'react';
+// src/components/auth/LoginForm.tsx
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { login as loginService } from '@/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNotification } from '@/hooks/useNotification';
-import { TextField, Button, Box, Typography, Link } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Link,
+  CircularProgress,
+} from '@mui/material';
+
+interface LoginFormData {
+  username: string;
+  password: string;
+}
+
+const schema = yup.object().shape({
+  username: yup.string().required('Username is required'),
+  password: yup.string().required('Password is required'),
+});
 
 const LoginForm = () => {
-    const [formData, setFormData] = useState({ username: '', password: '' });
-    const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
-    const { showNotification } = useNotification();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: yupResolver(schema),
+  });
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        try {
-            await login(formData.username, formData.password);
-            showNotification('Login successful', 'success');
-            navigate('/');
-        } catch (error: unknown) {
-            if (error && typeof error === 'object' && 'response' in error) {
-                const err = error as { response?: { data?: { message?: string } } };
-                showNotification(err.response?.data?.message || 'Login failed', 'error');
-            } else {
-                showNotification('Login failed', 'error');
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const mutation = useMutation({
+    mutationFn: (data: LoginFormData) => loginService(data.username, data.password),
+    onSuccess: (data) => {
+      login(data.user, data.accessToken, data.refreshToken);
+      navigate('/');
+    },
+  });
 
-    return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-            <TextField
-                fullWidth
-                label="Username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                margin="normal"
-                required
-            />
-            <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                margin="normal"
-                required
-            />
-            <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                disabled={isLoading}
-            >
-                {isLoading ? 'Logging in...' : 'Login'}
-            </Button>
-            <Typography variant="body2" align="center">
-                Don't have an account?{' '}
-                <Link href="#" underline="hover">
-                    Contact admin
-                </Link>
-            </Typography>
-        </Box>
-    );
+  const onSubmit = (data: LoginFormData) => {
+    mutation.mutate(data);
+  };
+
+  return (
+    <Box
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      sx={{
+        mt: 3,
+        '& .MuiTextField-root': {
+          mb: 2,
+        },
+      }}
+    >
+      <TextField
+        fullWidth
+        label="Username"
+        {...register('username')}
+        error={!!errors.username}
+        helperText={errors.username?.message}
+        margin="normal"
+        variant="outlined"
+      />
+      <TextField
+        fullWidth
+        label="Password"
+        type="password"
+        {...register('password')}
+        error={!!errors.password}
+        helperText={errors.password?.message}
+        margin="normal"
+        variant="outlined"
+      />
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{
+          mt: 2,
+          mb: 2,
+          py: 1.5,
+          fontSize: '1rem',
+        }}
+        disabled={mutation.isPending}
+      >
+        {mutation.isPending ? <CircularProgress size={24} /> : 'Login'}
+      </Button>
+      <Typography variant="body2" align="center" color="text.secondary">
+        Don't have an account?{' '}
+        <Link
+          href="#"
+          underline="hover"
+          color="primary"
+          onClick={(e) => {
+            e.preventDefault();
+            // Handle contact admin action
+          }}
+        >
+          Contact admin
+        </Link>
+      </Typography>
+    </Box>
+  );
 };
 
 export default LoginForm;

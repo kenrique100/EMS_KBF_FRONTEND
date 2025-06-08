@@ -1,36 +1,42 @@
+// src/api/employees.ts
 import api from '../config/axios';
-
-interface Employee {
-    id: number;
-    username: string;
-    name: string;
-    dateOfEmployment: string;
-    status: string;
-}
+import { Employee, EmployeeFormData } from '@/utils/types';
+import { useQuery } from '@tanstack/react-query';
 
 export const getEmployees = async (): Promise<Employee[]> => {
-    const response = await api.get('/employees');
+    const response = await api.get('/api/employees');
     return response.data;
 };
 
-export const getEmployeeById = async (id: number): Promise<Employee> => {
-    const response = await api.get(`/employees/${id}`);
+export const getEmployeeById = async (id: string): Promise<Employee> => {
+    const response = await api.get(`/api/employees/${id}`);
     return response.data;
 };
 
-export const createEmployee = async (
-    employeeData: Omit<Employee, 'id'>,
-    profilePicture?: File,
-    document?: File
-): Promise<Employee> => {
-    const formData = new FormData();
-    formData.append('employee', new Blob([JSON.stringify(employeeData)], {
-        type: 'application/json',
-    }));
-    if (profilePicture) formData.append('profilePicture', profilePicture);
-    if (document) formData.append('document', document);
+export const useEmployeeById = (id: string) =>
+  useQuery({
+      queryKey: ['employee', id],
+      queryFn: () => getEmployeeById(id),
+      enabled: !!id,
+  });
 
-    const response = await api.post('/employees', formData, {
+export const createEmployee = async (formData: EmployeeFormData): Promise<Employee> => {
+    const data = new FormData();
+    data.append('username', formData.username);
+    data.append('name', formData.name);
+    data.append('password', formData.password);
+    data.append('dateOfEmployment', formData.dateOfEmployment?.toISOString() || '');
+    data.append('status', formData.status);
+
+    if (formData.profilePicture) {
+        data.append('profilePicture', formData.profilePicture);
+    }
+
+    if (formData.document) {
+        data.append('document', formData.document);
+    }
+
+    const response = await api.post('/api/employees', data, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -38,29 +44,32 @@ export const createEmployee = async (
     return response.data;
 };
 
-export const updateEmployee = async (
-    id: number,
-    employeeData: Partial<Employee>
-): Promise<Employee> => {
-    const response = await api.put(`/employees/${id}`, employeeData);
-    return response.data;
-};
+export const updateEmployee = async (id: string, formData: EmployeeFormData): Promise<Employee> => {
+    const data = new FormData();
+    data.append('username', formData.username);
+    data.append('name', formData.name);
+    if (formData.password) {
+        data.append('password', formData.password);
+    }
+    data.append('dateOfEmployment', formData.dateOfEmployment?.toISOString() || '');
+    data.append('status', formData.status);
 
-export const deleteEmployee = async (id: number): Promise<void> => {
-    await api.delete(`/employees/${id}`);
-};
+    if (formData.profilePicture) {
+        data.append('profilePicture', formData.profilePicture);
+    }
 
-export const getEmployeeFiles = async (): Promise<string[]> => {
-    const response = await api.get('/employees/files');
-    return response.data;
-};
+    if (formData.document) {
+        data.append('document', formData.document);
+    }
 
-export const downloadEmployeeFile = async (
-    subDirectory: string,
-    filename: string
-): Promise<Blob> => {
-    const response = await api.get(`/employees/files/${subDirectory}/${filename}`, {
-        responseType: 'blob',
+    const response = await api.put(`/api/employees/${id}`, data, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
     });
     return response.data;
+};
+
+export const deleteEmployee = async (id: string): Promise<void> => {
+    await api.delete(`/api/employees/${id}`);
 };

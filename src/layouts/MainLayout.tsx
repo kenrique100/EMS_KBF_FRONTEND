@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, ReactNode } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import {
     Box,
@@ -10,7 +10,7 @@ import {
     IconButton,
     Drawer,
     List,
-    ListItem,
+    ListItemButton,
     ListItemIcon,
     ListItemText,
     Avatar,
@@ -23,138 +23,121 @@ import {
     Payment as PaymentIcon,
     ExitToApp as ExitToAppIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext.js';
+import { useAuth } from '@/contexts/AuthContext';
 
 const drawerWidth = 240;
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
-    ({ theme, open }) => ({
-        flexGrow: 1,
-        padding: theme.spacing(3),
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
+    open?: boolean;
+}>(({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: `-${drawerWidth}px`,
+    ...(open && {
         transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
+            easing: theme.transitions.easing.easeOut,
+            duration: theme.transitions.duration.enteringScreen,
         }),
-        marginLeft: `-${drawerWidth}px`,
-        ...(open && {
-            transition: theme.transitions.create('margin', {
-                easing: theme.transitions.easing.easeOut,
-                duration: theme.transitions.duration.enteringScreen,
-            }),
-            marginLeft: 0,
-        }),
-    })
-);
+        marginLeft: 0,
+    }),
+}));
 
-const MainLayout = () => {
+// ✅ Accept children if you are using this component directly
+interface MainLayoutProps {
+    children?: ReactNode;
+}
+
+const MainLayout: React.FC<MainLayoutProps> = () => {
     const [open, setOpen] = useState(true);
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
-    const handleDrawerOpen = () => {
-        setOpen(true);
+    const toggleDrawer = () => setOpen(!open);
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
     };
 
-    const handleDrawerClose = () => {
-        setOpen(false);
-    };
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            // Redirect to login page after logout
-            window.location.href = '/login';
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
-    };
+    const menuItems = [
+        { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
+        { icon: <PeopleIcon />, text: 'Employees', path: '/employees' },
+        { icon: <AssignmentIcon />, text: 'Tasks', path: '/tasks' },
+        { icon: <PaymentIcon />, text: 'Salaries', path: '/salaries' },
+    ];
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            <CssBaseline />
-            <AppBar
-                position="fixed"
-                sx={{
-                    zIndex: (theme) => theme.zIndex.drawer + 1,
-                    ...(open && { width: `calc(100% - ${drawerWidth}px)`, marginLeft: `${drawerWidth}px` }),
-                }}
-            >
-                <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        onClick={handleDrawerOpen}
-                        edge="start"
-                        sx={{ mr: 2, ...(open && { display: 'none' }) }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        Employee Management System
-                    </Typography>
-                    <Box display="flex" alignItems="center">
-                        <Avatar sx={{ width: 32, height: 32, mr: 1 }} />
-                        <Typography variant="subtitle1">{user?.username}</Typography>
-                    </Box>
-                </Toolbar>
-            </AppBar>
-            <Drawer
-                sx={{
+      <Box sx={{ display: 'flex' }}>
+          <CssBaseline />
+          <AppBar
+            position="fixed"
+            sx={{
+                zIndex: (theme) => theme.zIndex.drawer + 1,
+                ...(open && {
+                    width: `calc(100% - ${drawerWidth}px)`,
+                    marginLeft: `${drawerWidth}px`,
+                }),
+            }}
+          >
+              <Toolbar>
+                  <IconButton
+                    color="inherit"
+                    onClick={toggleDrawer}
+                    edge="start"
+                    sx={{ mr: 2, ...(open && { display: 'none' }) }}
+                  >
+                      <MenuIcon />
+                  </IconButton>
+                  <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
+                      Employee Management
+                  </Typography>
+                  <Box display="flex" alignItems="center">
+                      <Avatar sx={{ width: 32, height: 32, mr: 1 }} />
+                      <Typography variant="subtitle1">{user?.name}</Typography>
+                  </Box>
+              </Toolbar>
+          </AppBar>
+          <Drawer
+            sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                '& .MuiDrawer-paper': {
                     width: drawerWidth,
-                    flexShrink: 0,
-                    '& .MuiDrawer-paper': {
-                        width: drawerWidth,
-                        boxSizing: 'border-box',
-                    },
-                }}
-                variant="persistent"
-                anchor="left"
-                open={open}
-            >
-                <Toolbar />
-                <Box sx={{ overflow: 'auto' }}>
-                    <List>
-                        <ListItem button component="a" href="/">
-                            <ListItemIcon>
-                                <DashboardIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Dashboard" />
-                        </ListItem>
-                        <ListItem button component="a" href="/employees">
-                            <ListItemIcon>
-                                <PeopleIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Employees" />
-                        </ListItem>
-                        <ListItem button component="a" href="/tasks">
-                            <ListItemIcon>
-                                <AssignmentIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Tasks" />
-                        </ListItem>
-                        <ListItem button component="a" href="/salaries">
-                            <ListItemIcon>
-                                <PaymentIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Salaries" />
-                        </ListItem>
-                    </List>
-                </Box>
-                <Box sx={{ mt: 'auto', p: 2 }}>
-                    <List>
-                        <ListItem button onClick={handleLogout}>
-                            <ListItemIcon>
-                                <ExitToAppIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Logout" />
-                        </ListItem>
-                    </List>
-                </Box>
-            </Drawer>
-            <Main open={open}>
-                <Toolbar />
-                <Outlet />
-            </Main>
-        </Box>
+                    boxSizing: 'border-box',
+                },
+            }}
+            variant="persistent"
+            anchor="left"
+            open={open}
+          >
+              <Toolbar />
+              <Box sx={{ overflow: 'auto' }}>
+                  <List>
+                      {menuItems.map((item) => (
+                        <ListItemButton key={item.text} component={Link} to={item.path}>
+                            <ListItemIcon>{item.icon}</ListItemIcon>
+                            <ListItemText primary={item.text} />
+                        </ListItemButton>
+                      ))}
+                  </List>
+              </Box>
+              <Box sx={{ mt: 'auto', p: 2 }}>
+                  <List>
+                      <ListItemButton onClick={handleLogout}>
+                          <ListItemIcon><ExitToAppIcon /></ListItemIcon>
+                          <ListItemText primary="Logout" />
+                      </ListItemButton>
+                  </List>
+              </Box>
+          </Drawer>
+          <Main open={open}>
+              <Toolbar />
+              <Outlet />
+          </Main>
+      </Box>
     );
 };
 

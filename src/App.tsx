@@ -1,21 +1,22 @@
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.js';
-import { NotificationProvider } from './hooks/useNotification';
-import AppRouter from './routes/AppRouter.js';
-import Notification from './components/common/Notification.js';
-import '@/assets/styles/index.css';
+import { Outlet } from 'react-router-dom';
+import { Box } from '@mui/material';
+import MainLayout from '@/layouts/MainLayout';
 
 function App() {
-    return (
-        <BrowserRouter>
-            <AuthProvider>
-                <NotificationProvider>
-                    <AppRouter />
-                    <Notification />
-                </NotificationProvider>
-            </AuthProvider>
-        </BrowserRouter>
-    );
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: 'background.default',
+      }}
+    >
+      <MainLayout>
+        <Outlet />
+      </MainLayout>
+    </Box>
+  );
 }
 
 export default App;

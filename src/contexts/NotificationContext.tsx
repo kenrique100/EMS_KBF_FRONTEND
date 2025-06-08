@@ -1,14 +1,16 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
 interface Notification {
     open: boolean;
     message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
+    type: NotificationType;
 }
 
 interface NotificationContextType {
     notification: Notification;
-    showNotification: (message: string, type?: Notification['type']) => void;
+    showNotification: (message: string, type?: NotificationType) => void;
     hideNotification: () => void;
 }
 
@@ -25,7 +27,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         type: 'info',
     });
 
-    const showNotification = (message: string, type: Notification['type'] = 'info') => {
+    const showNotification = (message: string, type: NotificationType = 'info') => {
         setNotification({ open: true, message, type });
     };
 
@@ -36,17 +38,17 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     const value = {
         notification,
         showNotification,
-        hideNotification,
+        hideNotification
     };
 
     return (
-        <NotificationContext.Provider value={value}>
-            {children}
-        </NotificationContext.Provider>
+      <NotificationContext.Provider value={value}>
+          {children}
+      </NotificationContext.Provider>
     );
 };
 
-export const useNotification = (): NotificationContextType => {
+export const useNotification = () => {
     const context = useContext(NotificationContext);
     if (!context) {
         throw new Error('useNotification must be used within a NotificationProvider');

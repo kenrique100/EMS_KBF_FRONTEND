@@ -1,13 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '../common/LoadingSpinner';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 const PrivateRoute = () => {
-    const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-    if (isLoading) return <LoadingSpinner />;
-
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (isLoading) return <LoadingSpinner />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default PrivateRoute;

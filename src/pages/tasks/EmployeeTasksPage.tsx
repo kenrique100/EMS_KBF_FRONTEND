@@ -1,84 +1,83 @@
-import { useState, useEffect } from 'react';
+// src/pages/tasks/EmployeeTasksPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTasksByEmployee } from '@/api/tasks.ts';
-import { getEmployeeById } from '@/api/employees.ts';
-import TaskList from '../../components/tasks/TaskList.js';
-import PageHeader from '../../components/common/PageHeader.js';
-import { Container, Button, Box, CircularProgress } from '@mui/material';
+import { useTasksByEmployee } from '@/api/tasks';
+import { useEmployeeById } from '@/api/employees';
+import TaskList from '@/components/tasks/TaskList';
+import PageHeader from '@/components/common/PageHeader';
+import { Container, Button, Box, CircularProgress, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '../../contexts/AuthContext.js';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EmployeeTasksPage = () => {
-    const { id } = useParams();
-    const [tasks, setTasks] = useState([]);
-    const [employee, setEmployee] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const { showNotification, isAdmin } = useAuth();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [tasksData, employeeData] = await Promise.all([
-                    getTasksByEmployee(id),
-                    getEmployeeById(id),
-                ]);
-                setTasks(tasksData);
-                setEmployee(employeeData);
-            } catch (error) {
-                showNotification('Failed to load data', 'error');
-                navigate('/employees');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const {
+        data: employee,
+        isLoading: isEmployeeLoading,
+        isError: isEmployeeError,
+    } = useEmployeeById(id!);
 
-        fetchData();
-    }, [id, navigate, showNotification]);
+    const {
+        data: tasks,
+        isLoading: isTasksLoading,
+        isError: isTasksError,
+    } = useTasksByEmployee(id!);
 
-    const handleViewDetails = (taskId) => {
+    const handleViewDetails = (taskId: string) => {
         navigate(`/tasks/${taskId}`);
     };
 
-    if (isLoading) {
+    if (isEmployeeLoading || isTasksLoading) {
         return (
-            <Box display="flex" justifyContent="center" my={4}>
-                <CircularProgress />
-            </Box>
+          <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress />
+          </Box>
+        );
+    }
+
+    if (isEmployeeError || isTasksError) {
+        return (
+          <Box p={4}>
+              <Typography color="error" variant="h6">
+                  Failed to load employee or tasks.
+              </Typography>
+          </Box>
         );
     }
 
     return (
-        <Container maxWidth="lg">
-            <PageHeader
-                title={`Tasks for ${employee?.name}`}
-                action={
-                    <Box>
-                        <Button
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate(`/employees/${id}`)}
-                            sx={{ mr: 1 }}
-                        >
-                            Back to Employee
-                        </Button>
-                        {isAdmin && (
-                            <Button
-                                startIcon={<AddIcon />}
-                                onClick={() => navigate(`/tasks/new?employeeId=${id}`)}
-                                variant="contained"
-                            >
-                                Add Task
-                            </Button>
-                        )}
-                    </Box>
-                }
-            />
-            <TaskList
-                tasks={tasks}
-                onViewDetails={handleViewDetails}
-            />
-        </Container>
+      <Container maxWidth="lg">
+          <PageHeader
+            title={`Tasks for ${employee?.name}`}
+            action={
+                <Box>
+                    <Button
+                      startIcon={<ArrowBackIcon />}
+                      onClick={() => navigate(`/employees/${id}`)}
+                      sx={{ mr: 1 }}
+                    >
+                        Back to Employee
+                    </Button>
+                    {isAdmin && (
+                      <Button
+                        startIcon={<AddIcon />}
+                        onClick={() => navigate(`/tasks/new?employeeId=${id}`)}
+                        variant="contained"
+                      >
+                          Add Task
+                      </Button>
+                    )}
+                </Box>
+            }
+          />
+          <TaskList
+            tasks={tasks?.map(task => ({ ...task, employeeName: employee?.name })) || []}
+            onViewDetails={handleViewDetails}
+          />
+      </Container>
     );
 };
 

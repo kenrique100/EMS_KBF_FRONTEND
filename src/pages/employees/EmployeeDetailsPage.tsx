@@ -1,96 +1,89 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEmployeeById, deleteEmployee } from '@/api/employees.ts';
-import EmployeeProfile from '../../components/employees/EmployeeProfile.js';
-import PageHeader from '../../components/common/PageHeader.js';
+import { deleteEmployee } from '@/api/employees';
+import EmployeeProfile from '@/components/employees/EmployeeProfile';
+import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import useAuth from "@/hooks/useAuth.ts";
+import { useEmployee } from '@/hooks/useEmployee';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 
 const EmployeeDetailsPage = () => {
-    const { id } = useParams();
-    const [employee, setEmployee] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const { showNotification, isAdmin } = useAuth();
-    const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { isAdmin } = useAuth();
+  const { showNotification } = useNotification();
+  const navigate = useNavigate();
+  const { employee, isLoading } = useEmployee(id!);
 
-    useEffect(() => {
-        const fetchEmployee = async () => {
-            try {
-                const data = await getEmployeeById(id);
-                setEmployee(data);
-            } catch (error) {
-                showNotification('Failed to load employee data', 'error');
-                navigate('/employees');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchEmployee();
-    }, [id, navigate, showNotification]);
-
-    const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this employee?')) {
-            try {
-                await deleteEmployee(id);
-                showNotification('Employee deleted successfully', 'success');
-                navigate('/employees');
-            } catch (error) {
-                showNotification(error.message, 'error');
-            }
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <Box display="flex" justifyContent="center" my={4}>
-                <CircularProgress />
-            </Box>
-        );
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      try {
+        await deleteEmployee(id!);
+        showNotification('Employee deleted successfully', 'success');
+        navigate('/employees');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to delete employee';
+        showNotification(message, 'error');
+      }
     }
+  };
 
+  if (isLoading) {
     return (
-        <Container maxWidth="lg">
-            <PageHeader
-                title="Employee Details"
-                action={
-                    <Box>
-                        <Button
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate('/employees')}
-                            sx={{ mr: 1 }}
-                        >
-                            Back
-                        </Button>
-                        {isAdmin && (
-                            <>
-                                <Button
-                                    startIcon={<EditIcon />}
-                                    onClick={() => navigate(`/employees/${id}/edit`)}
-                                    variant="contained"
-                                    sx={{ mr: 1 }}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    startIcon={<DeleteIcon />}
-                                    onClick={handleDelete}
-                                    variant="contained"
-                                    color="error"
-                                >
-                                    Delete
-                                </Button>
-                            </>
-                        )}
-                    </Box>
-                }
-            />
-            <EmployeeProfile employee={employee} />
-        </Container>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress size={60} />
+      </Box>
     );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <PageHeader
+        title="Employee Details"
+        breadcrumbs={[
+          { label: 'Employees', path: '/employees' },
+          { label: employee?.name || 'Employee', path: '' }
+        ]}
+        action={
+          <Box display="flex" gap={2}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/employees')}
+              variant="outlined"
+              sx={{ minWidth: 120 }}
+            >
+              Back
+            </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  startIcon={<EditIcon />}
+                  onClick={() => navigate(`/employees/${id}/edit`)}
+                  variant="contained"
+                  color="primary"
+                  sx={{ minWidth: 120 }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDelete}
+                  variant="contained"
+                  color="error"
+                  sx={{ minWidth: 120 }}
+                >
+                  Delete
+                </Button>
+              </>
+            )}
+          </Box>
+        }
+      />
+      {employee && <EmployeeProfile employee={employee} />}
+    </Container>
+  );
 };
 
 export default EmployeeDetailsPage;

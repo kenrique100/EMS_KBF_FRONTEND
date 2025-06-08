@@ -1,22 +1,27 @@
+// src/layouts/AuthLayout.tsx
 import { Box, Container, CssBaseline } from '@mui/material';
-import { Outlet } from 'react-router-dom';
+import { ReactNode } from 'react';
 
-const AuthLayout = () => {
-    return (
-        <Container component="main" maxWidth="xs">
-            <CssBaseline />
-            <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
-            >
-                <Outlet />
-            </Box>
-        </Container>
-    );
+interface AuthLayoutProps {
+  children?: ReactNode;
+}
+
+const AuthLayout = ({ children }: AuthLayoutProps) => {
+  return (
+    <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        {children}
+      </Box>
+    </Container>
+  );
 };
 
 export default AuthLayout;
