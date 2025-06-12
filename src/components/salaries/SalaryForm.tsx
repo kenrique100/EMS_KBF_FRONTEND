@@ -1,3 +1,4 @@
+// src/components/salaries/SalaryForm.tsx
 import React, { useState, useEffect } from 'react';
 import {
     TextField,
@@ -9,6 +10,7 @@ import {
     InputLabel,
     Select,
     SelectChangeEvent,
+    Typography,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { validateSalary } from '@/utils/validators';
@@ -19,9 +21,18 @@ interface SalaryFormProps {
     employees: Employee[];
     onSubmit: (data: SalaryFormData) => void;
     isSubmitting: boolean;
+    submitButtonText?: string;
+    initialValues?: Partial<SalaryFormData>;
 }
 
-const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormProps) => {
+const SalaryForm: React.FC<SalaryFormProps> = ({
+                                                   salary,
+                                                   employees,
+                                                   onSubmit,
+                                                   isSubmitting,
+                                                   submitButtonText = 'Save',
+                                                   initialValues
+                                               }) => {
     const [formData, setFormData] = useState<SalaryFormData>({
         amount: '',
         paymentDate: null,
@@ -34,15 +45,21 @@ const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormPro
     useEffect(() => {
         if (salary) {
             setFormData({
-                amount: salary.amount || '',
-                paymentDate: salary.paymentDate || null,
-                employeeId: salary.employeeId || '',
+                amount: salary.amount.toString(),
+                paymentDate: salary.paymentDate ? new Date(salary.paymentDate) : null,
+                employeeId: salary.employeeId,
                 paymentReference: salary.paymentReference || '',
             });
+        } else if (initialValues) {
+            setFormData(prev => ({
+                ...prev,
+                ...initialValues,
+                paymentDate: initialValues.paymentDate ? new Date(initialValues.paymentDate) : null
+            }));
         }
-    }, [salary]);
+    }, [salary, initialValues]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
@@ -56,14 +73,23 @@ const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormPro
         setFormData((prev) => ({ ...prev, paymentDate: date }));
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const validationErrors = validateSalary(formData);
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-        onSubmit(formData);
+
+        const submitData: SalaryFormData = {
+            ...formData,
+            amount: Number(formData.amount),
+            paymentDate: formData.paymentDate || new Date(),
+            paymentReference: formData.paymentReference || '',
+            employeeId: formData.employeeId
+        };
+
+        onSubmit(submitData);
     };
 
     return (
@@ -81,7 +107,10 @@ const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormPro
                     helperText={errors.amount}
                     margin="normal"
                     InputProps={{
-                        inputProps: { min: 0, step: 0.01 },
+                        inputProps: {
+                            min: 0,
+                            step: 0.01
+                        },
                     }}
                   />
               </Grid>
@@ -116,6 +145,11 @@ const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormPro
                             </MenuItem>
                           ))}
                       </Select>
+                      {errors.employeeId && (
+                        <Typography variant="caption" color="error">
+                            {errors.employeeId}
+                        </Typography>
+                      )}
                   </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
@@ -136,8 +170,9 @@ const SalaryForm = ({ salary, employees, onSubmit, isSubmitting }: SalaryFormPro
                 variant="contained"
                 color="primary"
                 disabled={isSubmitting}
+                size="large"
               >
-                  {isSubmitting ? 'Saving...' : 'Save'}
+                  {isSubmitting ? 'Saving...' : submitButtonText}
               </Button>
           </Box>
       </Box>

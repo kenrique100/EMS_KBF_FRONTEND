@@ -1,5 +1,5 @@
 // src/components/tasks/TaskForm.tsx
-import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     TextField,
     Button,
@@ -10,9 +10,10 @@ import {
     Select,
     MenuItem,
     SelectChangeEvent,
+    Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { Task, CreateTaskDTO, TaskStatus, ValidationErrors } from '@/utils/types';
+import { Task, CreateTaskDTO, ValidationErrors } from '@/utils/types';
 import { validateTask } from '@/utils/validators';
 
 interface EmployeeOption {
@@ -21,19 +22,26 @@ interface EmployeeOption {
 }
 
 interface TaskFormProps {
-    task?: Partial<Task>;
+    task?: Task;
     employees: EmployeeOption[];
     onSubmit: (data: CreateTaskDTO) => void;
     isSubmitting: boolean;
+    submitButtonText?: string;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmitting }) => {
+const TaskForm: React.FC<TaskFormProps> = ({
+                                               task,
+                                               employees,
+                                               onSubmit,
+                                               isSubmitting,
+                                               submitButtonText = 'Save',
+                                           }) => {
     const [formData, setFormData] = useState<CreateTaskDTO>({
         title: '',
         description: '',
         deadline: new Date(),
         employeeId: '',
-        status: TaskStatus.PENDING,
+        expectedHours: undefined,
     });
 
     const [errors, setErrors] = useState<ValidationErrors>({});
@@ -41,39 +49,38 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
     useEffect(() => {
         if (task) {
             setFormData({
-                title: task.title || '',
+                title: task.title,
                 description: task.description || '',
-                deadline: task.deadline ? new Date(task.deadline) : new Date(),
-                employeeId: task.employeeId || '',
-                status: task.status || TaskStatus.PENDING,
+                deadline: new Date(task.deadline),
+                employeeId: task.employeeId,
                 expectedHours: task.expectedHours,
             });
         }
     }, [task]);
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [name]: name === 'expectedHours' ? Number(value) : value,
+            [name]: name === 'expectedHours' ? (value ? Number(value) : undefined) : value,
         }));
     };
 
-    const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const handleSelectChange = (e: SelectChangeEvent) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
-            [name as keyof CreateTaskDTO]: value,
+            [name]: value,
         }));
     };
 
     const handleDateChange = (date: Date | null) => {
         if (date) {
-            setFormData(prev => ({ ...prev, deadline: date }));
+            setFormData((prev) => ({ ...prev, deadline: date }));
         }
     };
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const validationErrors = validateTask(formData);
         if (Object.keys(validationErrors).length > 0) {
@@ -84,7 +91,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
     };
 
     return (
-      <Box component="form" onSubmit={handleSubmit}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <Grid container spacing={2}>
               <Grid item xs={12}>
                   <TextField
@@ -95,7 +102,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
                     onChange={handleChange}
                     error={!!errors.title}
                     helperText={errors.title}
-                    margin="normal"
                     required
                   />
               </Grid>
@@ -109,7 +115,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
                     onChange={handleChange}
                     multiline
                     rows={4}
-                    margin="normal"
                   />
               </Grid>
 
@@ -122,7 +127,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
                     slotProps={{
                         textField: {
                             fullWidth: true,
-                            margin: 'normal',
                             error: !!errors.deadline,
                             helperText: errors.deadline,
                             required: true,
@@ -132,7 +136,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
               </Grid>
 
               <Grid item xs={12} md={6}>
-                  <FormControl fullWidth margin="normal" error={!!errors.employeeId} required>
+                  <FormControl fullWidth error={!!errors.employeeId} required>
                       <InputLabel>Employee</InputLabel>
                       <Select
                         name="employeeId"
@@ -146,26 +150,36 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, employees, onSubmit, isSubmit
                             </MenuItem>
                           ))}
                       </Select>
+                      {errors.employeeId && (
+                        <Typography variant="caption" color="error">
+                            {errors.employeeId}
+                        </Typography>
+                      )}
                   </FormControl>
               </Grid>
 
               <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Expected Hours"
+                    label="Expected Hours (optional)"
                     name="expectedHours"
                     type="number"
                     value={formData.expectedHours ?? ''}
                     onChange={handleChange}
-                    margin="normal"
-                    InputProps={{ inputProps: { min: 0 } }}
+                    inputProps={{ min: 0 }}
                   />
               </Grid>
           </Grid>
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-              <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save'}
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={isSubmitting}
+                size="large"
+              >
+                  {isSubmitting ? 'Saving...' : submitButtonText}
               </Button>
           </Box>
       </Box>

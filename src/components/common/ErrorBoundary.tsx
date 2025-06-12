@@ -1,3 +1,4 @@
+// src/components/common/ErrorBoundary.tsx
 import React, { Component, ReactNode } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -9,7 +10,6 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
-  errorInfo?: React.ErrorInfo;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -19,6 +19,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Ignore browser extension errors
+    if (error.message.includes('chain is not set up')) {
+      return { hasError: false };
+    }
     return { hasError: true, error };
   }
 
@@ -27,13 +31,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (error.message.includes('chain is not set up')) {
       return;
     }
-
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined });
     window.location.href = '/';
   };
 

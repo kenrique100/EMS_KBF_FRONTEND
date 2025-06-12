@@ -1,39 +1,26 @@
-// src/pages/employees/EmployeesPage.tsx
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Button,
     Container,
     Paper,
+    Box,
+    CircularProgress,
+    Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import PageHeader from '../../components/common/PageHeader';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import PageHeader from '@/components/common/PageHeader';
+import EmployeeList from '@/components/employees/EmployeeList';
+import { useEmployees } from '@/api/employees';
+import { useDeleteEmployee } from '@/api/employees';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getEmployees } from "@/api/employees";
-import EmployeeList from '../../components/employees/EmployeeList';
-import { Employee } from '@/utils/types'; // ✅ make sure Employee type is imported
 
 const EmployeesPage = () => {
-    const [employees, setEmployees] = useState<Employee[]>([]); // ✅ FIXED
-    const [isLoading, setIsLoading] = useState(true);
-    const { isAdmin } = useAuth();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const fetchEmployees = async () => {
-            try {
-                const data = await getEmployees();
-                setEmployees(data);
-            } catch (error) {
-                console.error('Error fetching employees:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchEmployees();
-    }, []);
+    const { isAdmin } = useAuth();
+    const { showNotification } = useNotification();
+    const { data: employees, isLoading, error } = useEmployees();
+    const deleteMutation = useDeleteEmployee();
 
     const handleViewDetails = (id: string) => {
         navigate(`/employees/${id}`);
@@ -43,11 +30,30 @@ const EmployeesPage = () => {
         navigate(`/employees/${id}/edit`);
     };
 
-    const handleDelete = (id: string) => {
-        navigate(`/employees/${id}/delete`);
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteMutation.mutateAsync(id);
+            showNotification('Employee deleted successfully', 'success');
+        } catch (err) {
+            showNotification('Failed to delete employee', 'error');
+        }
     };
 
-    if (isLoading) return <LoadingSpinner />;
+    if (isLoading) {
+        return (
+          <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress />
+          </Box>
+        );
+    }
+
+    if (error) {
+        return (
+          <Typography color="error">
+              Error loading employees: {error.message}
+          </Typography>
+        );
+    }
 
     return (
       <Container maxWidth="lg">
@@ -66,12 +72,18 @@ const EmployeesPage = () => {
             }
           />
           <Paper sx={{ mt: 3 }}>
-              <EmployeeList
-                employees={employees}
-                onViewDetails={handleViewDetails}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              {employees && employees.length > 0 ? (
+                <EmployeeList
+                  employees={employees}
+                  onViewDetails={handleViewDetails}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ) : (
+                <Typography variant="body1" sx={{ p: 3 }}>
+                    No employees found
+                </Typography>
+              )}
           </Paper>
       </Container>
     );

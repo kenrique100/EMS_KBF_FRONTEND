@@ -1,87 +1,88 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotification } from '@/contexts/NotificationContext';
 import {
-    Container,
-    Grid,
-    Paper,
-    Typography,
-    CircularProgress,
-    Box,
+  Container,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Box,
 } from '@mui/material';
 import {
-    People as PeopleIcon,
-    Assignment as AssignmentIcon,
-    Payment as PaymentIcon,
+  People as PeopleIcon,
+  Assignment as AssignmentIcon,
+  Payment as PaymentIcon,
 } from '@mui/icons-material';
 import { getEmployees } from '@/api/employees';
 import { getTasks } from '@/api/tasks';
 import { getSalaries } from '@/api/salaries';
 
 interface StatCardProps {
-    icon: ReactNode;
-    title: string;
-    value: number;
+  icon: React.ReactNode;
+  title: string;
+  value: number;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value }) => (
   <Paper sx={{ p: 3, height: '100%' }}>
-      <Box display="flex" alignItems="center" mb={2}>
-          {icon}
-          <Typography variant="h6" sx={{ ml: 2 }}>
-              {title}
-          </Typography>
-      </Box>
-      <Typography variant="h4">{value}</Typography>
+    <Box display="flex" alignItems="center" mb={2}>
+      {icon}
+      <Typography variant="h6" sx={{ ml: 2 }}>
+        {title}
+      </Typography>
+    </Box>
+    <Typography variant="h4">{value}</Typography>
   </Paper>
 );
 
 const DashboardPage: React.FC = () => {
-    const [stats, setStats] = useState({
-        employeeCount: 0,
-        taskCount: 0,
-        salaryCount: 0,
-        loading: true,
-    });
+  const [stats, setStats] = useState({
+    employeeCount: 0,
+    taskCount: 0,
+    salaryCount: 0,
+    loading: true,
+  });
 
-    const { showNotification } = useNotification();
+  const { showNotification } = useNotification();
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const [employees, tasks, salaries] = await Promise.all([
-                    getEmployees(),
-                    getTasks(),
-                    getSalaries(),
-                ]);
-                setStats({
-                    employeeCount: employees.length,
-                    taskCount: tasks.length,
-                    salaryCount: salaries.length,
-                    loading: false,
-                });
-            } catch (error) {
-                showNotification('Failed to load dashboard data', 'error');
-                setStats(prev => ({ ...prev, loading: false }));
-            }
-        };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [employees, tasks, salaries] = await Promise.all([
+          getEmployees(),
+          getTasks(),
+          getSalaries(),
+        ]);
+        setStats({
+          employeeCount: employees.length,
+          taskCount: tasks.length,
+          salaryCount: salaries.length,
+          loading: false,
+        });
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        showNotification('Failed to load dashboard data', 'error');
+        setStats(prev => ({ ...prev, loading: false }));
+      }
+    };
 
-        fetchStats();
-    }, [showNotification]);
+    void fetchStats(); // Explicitly handle the promise
+  }, [showNotification]);
 
-    if (stats.loading) {
-        return (
-          <Box display="flex" justifyContent="center" my={4}>
-              <CircularProgress />
-          </Box>
-        );
-    }
-
+  if (stats.loading) {
     return (
-      <Container maxWidth="lg">
-          <Typography variant="h4" component="h1" gutterBottom>
-              Dashboard
-          </Typography>
-          <Grid container spacing={3} sx={{ mt: 2 }}>
+      <Box display="flex" justifyContent="center" my={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg">
+      <Typography variant="h4" component="h1" gutterBottom>
+        Dashboard
+      </Typography>
+      <Grid container spacing={3} sx={{ mt: 2 }}>
               <Grid item xs={12} md={4}>
                   <StatCard
                     icon={<PeopleIcon color="primary" fontSize="large" />}

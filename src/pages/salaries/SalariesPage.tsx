@@ -1,35 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getSalaries } from '@/api/salaries';
-import SalaryList from '../../components/salaries/SalaryList';
-import PageHeader from '../../components/common/PageHeader';
+// src/pages/salaries/SalariesPage.tsx
+import { useSalaries } from '@/api/salaries';
+import SalaryList from '@/components/salaries/SalaryList';
+import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNotification } from '@/contexts/NotificationContext';
-import { Salary } from '@/utils/types';
+import { useNavigate } from 'react-router-dom';
 
 const SalariesPage = () => {
-  const [salaries, setSalaries] = useState<Salary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: salaries, isLoading } = useSalaries();
   const { isAdmin } = useAuth();
-  const { showNotification } = useNotification();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchSalaries = async () => {
-      try {
-        const data = await getSalaries();
-        setSalaries(data);
-      } catch (error: any) {
-        showNotification('Failed to load salaries', 'error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSalaries();
-  }, [showNotification]);
 
   const handleViewDetails = (id: string) => {
     navigate(`/salaries/${id}`);
@@ -54,12 +35,15 @@ const SalariesPage = () => {
               onClick={() => navigate('/salaries/new')}
               variant="contained"
             >
-              Add Salary
+              Add Payment
             </Button>
           )
         }
       />
-      <SalaryList salaries={salaries} onViewDetails={handleViewDetails} />
+      <SalaryList
+        salaries={salaries || []}
+        onViewDetails={handleViewDetails}
+      />
     </Container>
   );
 };

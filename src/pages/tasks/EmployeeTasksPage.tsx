@@ -10,75 +10,78 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EmployeeTasksPage = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const { isAdmin } = useAuth();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
-    const {
-        data: employee,
-        isLoading: isEmployeeLoading,
-        isError: isEmployeeError,
-    } = useEmployeeById(id!);
+  const {
+    data: employee,
+    isLoading: isEmployeeLoading,
+    isError: isEmployeeError,
+  } = useEmployeeById(id!);
 
-    const {
-        data: tasks,
-        isLoading: isTasksLoading,
-        isError: isTasksError,
-    } = useTasksByEmployee(id!);
+  const {
+    data: tasks,
+    isLoading: isTasksLoading,
+    isError: isTasksError,
+  } = useTasksByEmployee(id!);
 
-    const handleViewDetails = (taskId: string) => {
-        navigate(`/tasks/${taskId}`);
-    };
+  const handleViewDetails = (taskId: string) => {
+    navigate(`/tasks/${taskId}`);
+  };
 
-    if (isEmployeeLoading || isTasksLoading) {
-        return (
-          <Box display="flex" justifyContent="center" my={4}>
-              <CircularProgress />
-          </Box>
-        );
-    }
+  if (isEmployeeLoading || isTasksLoading) {
+    return (
+      <Box display="flex" justifyContent="center" my={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    if (isEmployeeError || isTasksError) {
-        return (
-          <Box p={4}>
-              <Typography color="error" variant="h6">
-                  Failed to load employee or tasks.
-              </Typography>
-          </Box>
-        );
-    }
-
+  if (isEmployeeError || isTasksError) {
     return (
       <Container maxWidth="lg">
-          <PageHeader
-            title={`Tasks for ${employee?.name}`}
-            action={
-                <Box>
-                    <Button
-                      startIcon={<ArrowBackIcon />}
-                      onClick={() => navigate(`/employees/${id}`)}
-                      sx={{ mr: 1 }}
-                    >
-                        Back to Employee
-                    </Button>
-                    {isAdmin && (
-                      <Button
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate(`/tasks/new?employeeId=${id}`)}
-                        variant="contained"
-                      >
-                          Add Task
-                      </Button>
-                    )}
-                </Box>
-            }
-          />
-          <TaskList
-            tasks={tasks?.map(task => ({ ...task, employeeName: employee?.name })) || []}
-            onViewDetails={handleViewDetails}
-          />
+        <Typography variant="h6" color="error">
+          Failed to load employee or tasks
+        </Typography>
       </Container>
     );
+  }
+
+  return (
+    <Container maxWidth="lg">
+      <PageHeader
+        title={`Tasks for ${employee?.name}`}
+        action={
+          <Box display="flex" gap={1}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate(`/employees/${id}`)}
+              variant="outlined"
+            >
+              Back to Employee
+            </Button>
+            {isAdmin && (
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => navigate(`/tasks/new?employeeId=${id}`)}
+                variant="contained"
+              >
+                Add Task
+              </Button>
+            )}
+          </Box>
+        }
+      />
+      <TaskList
+        tasks={tasks?.map(task => ({
+          ...task,
+          employeeName: employee?.name,
+        })) || []}
+        onViewDetails={handleViewDetails}
+      />
+    </Container>
+  );
 };
 
 export default EmployeeTasksPage;

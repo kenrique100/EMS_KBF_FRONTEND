@@ -1,4 +1,4 @@
-// src/utils/validation.ts
+// src/utils/validators.ts
 import { CreateTaskDTO, EmployeeFormData, SalaryFormData, ValidationErrors } from '@/utils/types';
 
 export const validateEmployee = (data: EmployeeFormData, isNew = false): ValidationErrors => {
@@ -6,6 +6,8 @@ export const validateEmployee = (data: EmployeeFormData, isNew = false): Validat
 
     if (isNew && !data.username?.trim()) {
         errors.username = 'Username is required';
+    } else if (isNew && data.username && data.username.length < 3) {
+        errors.username = 'Username must be at least 3 characters';
     }
 
     if (!data.name?.trim()) {
@@ -14,10 +16,22 @@ export const validateEmployee = (data: EmployeeFormData, isNew = false): Validat
 
     if (isNew && !data.password?.trim()) {
         errors.password = 'Password is required';
+    } else if (data.password && data.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
     }
 
     if (!data.dateOfEmployment) {
         errors.dateOfEmployment = 'Date of employment is required';
+    }
+
+    if (!data.email?.trim()) {
+        errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        errors.email = 'Invalid email format';
+    }
+
+    if (!data.department?.trim()) {
+        errors.department = 'Department is required';
     }
 
     return errors;
@@ -50,9 +64,11 @@ export const validateTask = (data: CreateTaskDTO): ValidationErrors => {
 
     if (!data.deadline) {
         errors.deadline = 'Deadline is required';
+    } else if (new Date(data.deadline) < new Date()) {
+        errors.deadline = 'Deadline must be in the future';
     }
 
-    if (!data.employeeId?.trim()) {
+    if (!data.employeeId) {
         errors.employeeId = 'Employee is required';
     }
 

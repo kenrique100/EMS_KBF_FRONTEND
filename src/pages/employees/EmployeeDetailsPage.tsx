@@ -1,36 +1,99 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { deleteEmployee } from '@/api/employees';
-import EmployeeProfile from '@/components/employees/EmployeeProfile';
-import PageHeader from '@/components/common/PageHeader';
-import { Container, Button, Box, CircularProgress } from '@mui/material';
+import {
+  Container,
+  Button,
+  Box,
+  CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  Divider,
+  Typography,
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useEmployee } from '@/hooks/useEmployee';
+import PageHeader from '@/components/common/PageHeader';
+import { useEmployeeById } from '@/api/employees';
+import { useDeleteEmployee, useUpdateEmployee } from '@/api/employees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
+import EmployeeProfile from '@/components/employees/EmployeeProfile';
+import FileActions from '@/components/common/FileActions';
+import FileUpload from '@/components/common/FileUpload';
+import { Employee, EmployeeFormData, FileUploadResponse } from '@/utils/types';
 
 const EmployeeDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const { isAdmin } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const { employee, isLoading } = useEmployee(id!);
+  const { data: employee, isLoading, refetch } = useEmployeeById(id!);
+  const { mutateAsync: deleteEmployee, isPending: isDeleting } = useDeleteEmployee();
+  const { mutateAsync: updateEmployee } = useUpdateEmployee();
 
-  const handleDelete = async () => {
+  // Helper to convert Employee -> EmployeeFormData
+  const toEmployeeFormData = (employee: Employee): EmployeeFormData => ({
+    id: employee.id,
+    username: employee.username,
+    name: employee.name,
+    email: employee.email ?? '',
+    phoneNumber: employee.phoneNumber ?? '',
+    department: employee.department ?? '',
+    password: employee.password ?? '',
+    dateOfEmployment:
+      typeof employee.dateOfEmployment === 'string'
+        ? new Date(employee.dateOfEmployment)
+        : employee.dateOfEmployment,
+    status: employee.status,
+    profilePicture: employee.profilePicture ?? null,
+    document: employee.document ?? null,
+  });
+
+  const handleDeleteEmployee = async () => {
     if (window.confirm('Are you sure you want to delete this employee?')) {
       try {
         await deleteEmployee(id!);
         showNotification('Employee deleted successfully', 'success');
         navigate('/employees');
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Failed to delete employee';
-        showNotification(message, 'error');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete employee';
+        showNotification(errorMessage, 'error');
       }
     }
   };
 
-  if (isLoading) {
+  const handleDocumentUploadSuccess = async (response: FileUploadResponse) => {
+    try {
+      const formData = {
+        ...toEmployeeFormData(employee!),
+        document: response.filename,
+      };
+      await updateEmployee({ id: id!, data: formData });
+      await refetch();
+      showNotification('Document uploaded successfully', 'success');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update document';
+      showNotification(errorMessage, 'error');
+    }
+  };
+
+  const handleDocumentDeleteSuccess = async () => {
+    try {
+      const formData = {
+        ...toEmployeeFormData(employee!),
+        document: null,
+      };
+      await updateEmployee({ id: id!, data: formData });
+      await refetch();
+      showNotification('Document deleted successfully', 'success');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to remove document';
+      showNotification(errorMessage, 'error');
+    }
+  };
+
+  if (isLoading || !employee) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress size={60} />
@@ -39,12 +102,12 @@ const EmployeeDetailsPage = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg">
       <PageHeader
         title="Employee Details"
         breadcrumbs={[
           { label: 'Employees', path: '/employees' },
-          { label: employee?.name || 'Employee', path: '' }
+          { label: employee.name, path: '' },
         ]}
         action={
           <Box display="flex" gap={2}>
@@ -69,19 +132,53 @@ const EmployeeDetailsPage = () => {
                 </Button>
                 <Button
                   startIcon={<DeleteIcon />}
-                  onClick={handleDelete}
+                  onClick={handleDeleteEmployee}
                   variant="contained"
                   color="error"
                   sx={{ minWidth: 120 }}
+                  disabled={isDeleting}
                 >
-                  Delete
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                 </Button>
               </>
             )}
           </Box>
         }
       />
-      {employee && <EmployeeProfile employee={employee} />}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <EmployeeProfile employee={employee} />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Documents
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              {employee.document ? (
+                <FileActions
+                  filename={employee.document as string}
+                  subDirectory="documents"
+                  onDeleteSuccess={handleDocumentDeleteSuccess}
+                  disabled={!isAdmin}
+                />
+              ) : isAdmin ? (
+                <FileUpload
+                  label="Upload Document"
+                  subDirectory="documents"
+                  accept=".pdf,.doc,.docx"
+                  onUploadSuccess={handleDocumentUploadSuccess}
+                />
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No documents uploaded
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

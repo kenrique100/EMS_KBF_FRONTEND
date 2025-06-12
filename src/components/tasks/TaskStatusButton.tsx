@@ -1,6 +1,6 @@
 // src/components/tasks/TaskStatusButton.tsx
 import { Button, Menu, MenuItem } from '@mui/material';
-import React, { useState, MouseEvent } from 'react';
+import React, { useState } from 'react';
 import { Task, TaskStatus } from '@/utils/types';
 
 interface TaskStatusButtonProps {
@@ -12,12 +12,12 @@ interface TaskStatusButtonProps {
 const TaskStatusButton: React.FC<TaskStatusButtonProps> = ({
                                                              task,
                                                              onStatusChange,
-                                                             disabled = false
+                                                             disabled = false,
                                                            }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -33,20 +33,15 @@ const TaskStatusButton: React.FC<TaskStatusButtonProps> = ({
   const getButtonProps = () => {
     switch (task.status) {
       case TaskStatus.PENDING:
-        return { color: 'primary', variant: 'contained', label: 'Start Task' };
+        return { color: 'primary', label: 'Start Task' };
       case TaskStatus.IN_PROGRESS:
-        return { color: 'warning', variant: 'contained', label: 'Stop Task' };
+        return { color: 'warning', label: 'Stop Task' };
       case TaskStatus.COMPLETED:
       case TaskStatus.UNCOMPLETED:
       case TaskStatus.CANCELLED:
-        return {
-          color: 'success',
-          variant: 'outlined',
-          label: 'Completed',
-          disabled: true
-        };
+        return { color: 'success', label: 'Completed', disabled: true };
       default:
-        return { color: 'primary', variant: 'contained', label: 'Update Status' };
+        return { color: 'primary', label: 'Update Status' };
     }
   };
 
@@ -60,8 +55,9 @@ const TaskStatusButton: React.FC<TaskStatusButtonProps> = ({
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
         color={buttonProps.color as any}
-        variant={buttonProps.variant as any}
+        variant="contained"
         disabled={disabled || buttonProps.disabled}
+        size="small"
       >
         {buttonProps.label}
       </Button>

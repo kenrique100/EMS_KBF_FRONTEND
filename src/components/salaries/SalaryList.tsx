@@ -1,85 +1,95 @@
 // src/components/salaries/SalaryList.tsx
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  Typography,
 } from '@mui/material';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { Salary } from '@/utils/types';
+import React from 'react';
 
 interface SalaryListProps {
-    salaries: Salary[];
-    onViewDetails: (id: string) => void;
-    onEdit?: (id: string) => void;
-    onDelete?: (id: string) => void;
+  salaries: Salary[];
+  onViewDetails: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const SalaryList = ({
-                        salaries,
-                        onViewDetails,
-                        onEdit,
-                        onDelete,
-                    }: SalaryListProps) => {
+const SalaryList: React.FC<SalaryListProps> = ({
+                                                 salaries,
+                                                 onViewDetails,
+                                                 onEdit,
+                                                 onDelete
+                                               }) => {
+  if (salaries.length === 0) {
     return (
-      <TableContainer component={Paper}>
-          <Table>
-              <TableHead>
-                  <TableRow>
-                      <TableCell>Employee ID</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Payment Date</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Reference</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-              </TableHead>
-              <TableBody>
-                  {salaries.map((salary) => (
-                    <TableRow key={salary.id}>
-                        <TableCell>{salary.employeeId}</TableCell>
-                        <TableCell>{formatCurrency(salary.amount)}</TableCell>
-                        <TableCell>{formatDate(salary.paymentDate)}</TableCell>
-                        <TableCell>{salary.status}</TableCell>
-                        <TableCell>{salary.paymentReference}</TableCell>
-                        <TableCell align="right">
-                            <Button
-                              size="small"
-                              onClick={() => onViewDetails(salary.id)}
-                              sx={{ mr: 1 }}
-                            >
-                                View
-                            </Button>
-                            {onEdit && (
-                              <Button
-                                size="small"
-                                color="secondary"
-                                onClick={() => onEdit(salary.id)}
-                                sx={{ mr: 1 }}
-                              >
-                                  Edit
-                              </Button>
-                            )}
-                            {onDelete && (
-                              <Button
-                                size="small"
-                                color="error"
-                                onClick={() => onDelete(salary.id)}
-                              >
-                                  Delete
-                              </Button>
-                            )}
-                        </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-          </Table>
-      </TableContainer>
+      <Typography variant="body1" align="center" sx={{ py: 4 }}>
+        No salary payments found
+      </Typography>
     );
+  }
+
+  return (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Employee</TableCell>
+            <TableCell>Amount</TableCell>
+            <TableCell>Payment Date</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Reference</TableCell>
+            <TableCell align="right">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {salaries.map((salary) => (
+            <TableRow key={salary.id}>
+              <TableCell>{salary.employeeName || salary.employeeId}</TableCell>
+              <TableCell>{formatCurrency(salary.amount)}</TableCell>
+              <TableCell>{formatDate(salary.paymentDate)}</TableCell>
+              <TableCell>{salary.status}</TableCell>
+              <TableCell>{salary.paymentReference}</TableCell>
+              <TableCell align="right">
+                <Button
+                  size="small"
+                  onClick={() => onViewDetails(salary.id)}
+                  sx={{ mr: 1 }}
+                >
+                  View
+                </Button>
+                {onEdit && (
+                  <Button
+                    size="small"
+                    color="secondary"
+                    onClick={() => onEdit(salary.id)}
+                    sx={{ mr: 1 }}
+                  >
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => onDelete(salary.id)}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 };
 
 export default SalaryList;

@@ -1,6 +1,4 @@
-// src/constants.ts
-
-// Load base URL from environment variable
+// src/utils/constants.ts
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 export const API_ENDPOINTS = {
@@ -16,6 +14,7 @@ export const API_ENDPOINTS = {
 
 export const QUERY_KEYS = {
   EMPLOYEES: 'employees',
+  EMPLOYEE: 'employee',
   TASKS: 'tasks',
   SALARIES: 'salaries',
   USER: 'user',

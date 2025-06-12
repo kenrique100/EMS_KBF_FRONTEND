@@ -1,5 +1,5 @@
 // src/api/files.ts
-import api from '../config/axios';
+import api from '@/config/axios';
 import { FileUploadResponse } from '@/utils/types';
 
 export const uploadFile = async (file: File, subDirectory: string): Promise<FileUploadResponse> => {

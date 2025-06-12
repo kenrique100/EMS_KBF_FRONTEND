@@ -1,54 +1,51 @@
-import { useEffect, useState } from 'react';
+// src/pages/salaries/SalaryDetailPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
-import { getSalaryById, deleteSalary } from '@/api/salaries';
-import { Salary, Employee } from '@/utils/types';
-import { Box, Button, CircularProgress, Container, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { useSalaryById } from '@/api/salaries';
+import { useEmployeeById } from '@/api/employees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
-import { getEmployeeById } from '@/api/employees';
+import { useDeleteSalary } from '@/api/salaries';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { formatDate, formatCurrency } from '@/utils/formatters';
+import { useState } from 'react';
 
 const SalaryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [salary, setSalary] = useState<Salary | null>(null);
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: salary, isLoading: isSalaryLoading } = useSalaryById(id!);
+  const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(salary?.employeeId || '');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { mutate: deleteSalary } = useDeleteSalary();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { showNotification } = useNotification();
 
-  useEffect(() => {
-    const fetchSalary = async () => {
-      try {
-        const data = await getSalaryById(id!);
-        setSalary(data);
-
-        const empData = await getEmployeeById(data.employeeId);
-        setEmployee(empData);
-      } catch {
-        showNotification('Failed to load salary details', 'error');
+  const handleDelete = () => {
+    deleteSalary(id!, {
+      onSuccess: () => {
+        showNotification('Salary payment deleted successfully', 'success');
         navigate('/salaries');
-      } finally {
-        setLoading(false);
+      },
+      onError: () => {
+        showNotification('Failed to delete salary payment', 'error');
       }
-    };
-
-    if (id) fetchSalary();
-  }, [id, navigate, showNotification]);
-
-  const handleDelete = async () => {
-    try {
-      await deleteSalary(id!);
-      showNotification('Salary deleted successfully', 'success');
-      navigate('/salaries');
-    } catch {
-      showNotification('Failed to delete salary', 'error');
-    }
+    });
+    setConfirmOpen(false);
   };
 
-  if (loading) {
+  if (isSalaryLoading || isEmployeeLoading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
         <CircularProgress />
@@ -56,32 +53,88 @@ const SalaryDetailPage = () => {
     );
   }
 
-  if (!salary) return null;
+  if (!salary) {
+    return (
+      <Container maxWidth="sm">
+        <Typography variant="h6" color="error" gutterBottom>
+          Salary payment not found
+        </Typography>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/salaries')}
+          variant="outlined"
+        >
+          Back to Salaries
+        </Button>
+      </Container>
+    );
+  }
 
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom>Salary Details</Typography>
-      <Typography><strong>Employee:</strong> {employee?.name ?? 'N/A'}</Typography>
-      <Typography><strong>Amount:</strong> ${salary.amount}</Typography>
-      <Typography><strong>Date:</strong> {new Date(salary.paymentDate).toLocaleDateString()}</Typography>
+    <Container maxWidth="md">
+      <Typography variant="h4" gutterBottom>
+        Salary Payment Details
+      </Typography>
 
-      <Box mt={4} display="flex" gap={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/salaries')} variant="outlined">
-          Back
+      <Box sx={{ my: 3, p: 3, bgcolor: 'background.paper', borderRadius: 1 }}>
+        <Typography variant="h6" gutterBottom>
+          Payment Information
+        </Typography>
+        <Typography><strong>Reference:</strong> {salary.paymentReference}</Typography>
+        <Typography><strong>Amount:</strong> {formatCurrency(salary.amount)}</Typography>
+        <Typography><strong>Date:</strong> {formatDate(salary.paymentDate)}</Typography>
+        <Typography><strong>Status:</strong> {salary.status}</Typography>
+        <Typography><strong>Created At:</strong> {formatDate(salary.createdAt)}</Typography>
+      </Box>
+
+      <Box sx={{ my: 3, p: 3, bgcolor: 'background.paper', borderRadius: 1 }}>
+        <Typography variant="h6" gutterBottom>
+          Employee Information
+        </Typography>
+        <Typography><strong>Name:</strong> {employee?.name || 'N/A'}</Typography>
+        <Typography><strong>Employee ID:</strong> {salary.employeeId}</Typography>
+      </Box>
+
+      <Box display="flex" gap={2} mt={4}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/salaries')}
+          variant="outlined"
+        >
+          Back to Salaries
         </Button>
         {isAdmin && (
-          <Button startIcon={<DeleteIcon />} onClick={() => setConfirmOpen(true)} color="error" variant="contained">
-            Delete
-          </Button>
+          <>
+            <Button
+              startIcon={<EditIcon />}
+              onClick={() => navigate(`/salaries/${id}/edit`)}
+              variant="contained"
+              color="primary"
+            >
+              Edit
+            </Button>
+            <Button
+              startIcon={<DeleteIcon />}
+              onClick={() => setConfirmOpen(true)}
+              variant="contained"
+              color="error"
+            >
+              Delete
+            </Button>
+          </>
         )}
       </Box>
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>Are you sure you want to delete this salary?</DialogContent>
+        <DialogContent>
+          Are you sure you want to delete this salary payment?
+        </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error">Delete</Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

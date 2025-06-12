@@ -14,10 +14,9 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import FileUpload from '../common/FileUpload';
-import { EmployeeFormData, EmployeeStatus, ValidationErrors } from '@/utils/types';
+import FileActions from '../common/FileActions';
+import { EmployeeFormData, EmployeeStatus, FileUploadResponse } from '@/utils/types';
 import { validateEmployee } from '@/utils/validators';
-import { uploadFile } from '@/api/files';
-import FileActions from '@/components/common/FileActions';
 
 interface EmployeeFormProps {
     employee?: EmployeeFormData;
@@ -37,6 +36,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     const [formData, setFormData] = useState<EmployeeFormData>({
         username: '',
         name: '',
+        email: '',
+        phoneNumber: '',
+        department: '',
         password: '',
         dateOfEmployment: null,
         status: 'ACTIVE',
@@ -44,31 +46,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         document: null,
     });
 
-    const [profilePicture, setProfilePicture] = useState<File | null>(null);
-    const [document, setDocument] = useState<File | null>(null);
-    const [errors, setErrors] = useState<ValidationErrors>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (employee) {
             setFormData({
-                username: employee.username,
-                name: employee.name,
-                password: '',
-                dateOfEmployment: employee.dateOfEmployment
-                  ? new Date(employee.dateOfEmployment)
-                  : null,
-                status: employee.status,
-                profilePicture: employee.profilePicture ?? null,
-                document: employee.document ?? null,
+                ...employee,
+                dateOfEmployment: employee.dateOfEmployment ? new Date(employee.dateOfEmployment) : null,
+                profilePicture: typeof employee.profilePicture === 'string' ? employee.profilePicture : null,
+                document: typeof employee.document === 'string' ? employee.document : null,
             });
-
-            if (typeof employee.profilePicture !== 'string') {
-                setProfilePicture(employee.profilePicture ?? null);
-            }
-
-            if (typeof employee.document !== 'string') {
-                setDocument(employee.document ?? null);
-            }
         }
     }, [employee]);
 
@@ -88,6 +75,34 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         setFormData((prev) => ({ ...prev, dateOfEmployment: date }));
     };
 
+    const handleProfilePictureUpload = (response: FileUploadResponse) => {
+        setFormData((prev) => ({
+            ...prev,
+            profilePicture: response.filename,
+        }));
+    };
+
+    const handleDocumentUpload = (response: FileUploadResponse) => {
+        setFormData((prev) => ({
+            ...prev,
+            document: response.filename,
+        }));
+    };
+
+    const handleProfilePictureDelete = () => {
+        setFormData((prev) => ({
+            ...prev,
+            profilePicture: null,
+        }));
+    };
+
+    const handleDocumentDelete = () => {
+        setFormData((prev) => ({
+            ...prev,
+            document: null,
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validationErrors = validateEmployee(formData, !employee);
@@ -96,33 +111,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             return;
         }
 
-        try {
-            let profilePicturePath: string | undefined;
-            let documentPath: string | undefined;
-
-            if (profilePicture) {
-                const response = await uploadFile(profilePicture, 'profilePictures');
-                profilePicturePath = response.path;
-            } else if (typeof formData.profilePicture === 'string') {
-                profilePicturePath = formData.profilePicture;
-            }
-
-            if (document) {
-                const response = await uploadFile(document, 'documents');
-                documentPath = response.path;
-            } else if (typeof formData.document === 'string') {
-                documentPath = formData.document;
-            }
-
-            setErrors({});
-            onSubmit({
-                ...formData,
-                profilePicture: profilePicturePath,
-                document: documentPath,
-            });
-        } catch (error) {
-            console.error('Upload failed:', error);
-        }
+        onSubmit(formData);
     };
 
     return (
@@ -150,6 +139,43 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     onChange={handleChange}
                     error={!!errors.name}
                     helperText={errors.name}
+                    margin="normal"
+                  />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={!!errors.email}
+                    helperText={errors.email}
+                    margin="normal"
+                  />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone Number"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    error={!!errors.phoneNumber}
+                    helperText={errors.phoneNumber}
+                    margin="normal"
+                  />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    error={!!errors.department}
+                    helperText={errors.department}
                     margin="normal"
                   />
               </Grid>
@@ -197,36 +223,46 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   </FormControl>
               </Grid>
 
-              {/* Profile Picture Upload */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                   <Typography variant="subtitle1" gutterBottom>
                       Profile Picture
                   </Typography>
-                  {typeof formData.profilePicture === 'string' ? (
-                    <FileActions filename={formData.profilePicture} subDirectory="profilePictures" />
+                  {formData.profilePicture ? (
+                    <FileActions
+                      filename={formData.profilePicture as string}
+                      subDirectory="profiles"
+                      onDeleteSuccess={handleProfilePictureDelete}
+                      disabled={isSubmitting}
+                    />
                   ) : (
                     <FileUpload
-                      label="Profile Picture"
-                      name="profilePicture"
+                      label="Upload Profile Picture"
+                      subDirectory="profiles"
                       accept="image/*"
-                      onFileChange={setProfilePicture}
+                      onUploadSuccess={handleProfilePictureUpload}
+                      disabled={isSubmitting}
                     />
                   )}
               </Grid>
 
-              {/* Document Upload */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                   <Typography variant="subtitle1" gutterBottom>
                       Document
                   </Typography>
-                  {typeof formData.document === 'string' ? (
-                    <FileActions filename={formData.document} subDirectory="documents" />
+                  {formData.document ? (
+                    <FileActions
+                      filename={formData.document as string}
+                      subDirectory="documents"
+                      onDeleteSuccess={handleDocumentDelete}
+                      disabled={isSubmitting}
+                    />
                   ) : (
                     <FileUpload
-                      label="Document"
-                      name="document"
+                      label="Upload Document"
+                      subDirectory="documents"
                       accept=".pdf,.doc,.docx"
-                      onFileChange={setDocument}
+                      onUploadSuccess={handleDocumentUpload}
+                      disabled={isSubmitting}
                     />
                   )}
               </Grid>
@@ -234,6 +270,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           <Box mt={3} display="flex" justifyContent="flex-end">
               <Button
                 type="submit"
+                variant="contained"
                 color="primary"
                 disabled={isSubmitting}
                 {...submitButtonProps}

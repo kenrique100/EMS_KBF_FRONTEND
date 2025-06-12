@@ -1,35 +1,32 @@
+// src/pages/employees/EditEmployeePage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
-import { updateEmployee } from '@/api/employees';
-import EmployeeForm from '@/components/employees/EmployeeForm';
+import { Container, Box, CircularProgress } from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
-import { Container, CircularProgress, Box } from '@mui/material';
-import { useEmployee } from '@/hooks/useEmployee';
-import { Employee, EmployeeFormData } from '@/utils/types';
-import { useState } from 'react';
+import { useEmployeeById } from '@/api/employees';
+import { useUpdateEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
+import EmployeeForm from '@/components/employees/EmployeeForm';
+import { EmployeeFormData } from '@/utils/types';
 
 const EditEmployeePage = () => {
   const { id } = useParams<{ id: string }>();
-  const { showNotification } = useNotification();
-  const { employee, isLoading } = useEmployee(id!);
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showNotification } = useNotification();
+  const { data: employee, isLoading } = useEmployeeById(id!);
+  const { mutateAsync: updateEmployee, isPending: isUpdating } = useUpdateEmployee();
 
   const handleSubmit = async (formData: EmployeeFormData) => {
-    setIsSubmitting(true);
     try {
-      await updateEmployee(id!, formData);
+      await updateEmployee({ id: id!, data: formData });
       showNotification('Employee updated successfully', 'success');
       navigate(`/employees/${id}`);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to update employee';
-      showNotification(message, 'error');
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update employee';
+      showNotification(errorMessage, 'error');
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !employee) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress size={60} />
@@ -37,42 +34,40 @@ const EditEmployeePage = () => {
     );
   }
 
-  const toFormData = (emp: Employee): EmployeeFormData => ({
-    id: emp.id,
-    username: emp.username,
-    name: emp.name,
-    password: '', // leave empty for editing
-    dateOfEmployment: emp.dateOfEmployment ? new Date(emp.dateOfEmployment) : null,
-    status: emp.status,
-    profilePicture: emp.profilePicture instanceof File ? emp.profilePicture : null,
-    document: emp.document instanceof File ? emp.document : null,
-  });
+  const initialFormData: EmployeeFormData = {
+    id: employee.id,
+    username: employee.username,
+    name: employee.name,
+    email: employee.email || '',
+    phoneNumber: employee.phoneNumber || '',
+    department: employee.department || '',
+    password: '',
+    dateOfEmployment: employee.dateOfEmployment ? new Date(employee.dateOfEmployment) : null,
+    status: employee.status,
+    profilePicture: employee.profilePicture || null,
+    document: employee.document || null,
+  };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <PageHeader
-          title="Edit Employee"
-          breadcrumbs={[
-            { label: 'Employees', path: '/employees' },
-            { label: employee?.name || 'Employee', path: `/employees/${id}` },
-            { label: 'Edit', path: '' }
-          ]}
-        />
-      </Box>
-      {employee && (
-        <EmployeeForm
-          employee={toFormData(employee)}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          submitButtonText="Update Employee"
-          submitButtonProps={{
-            variant: 'contained',
-            size: 'large',
-            fullWidth: false,
-          }}
-        />
-      )}
+    <Container maxWidth="lg">
+      <PageHeader
+        title="Edit Employee"
+        breadcrumbs={[
+          { label: 'Employees', path: '/employees' },
+          { label: employee.name, path: `/employees/${id}` },
+          { label: 'Edit', path: '' }
+        ]}
+      />
+      <EmployeeForm
+        employee={initialFormData}
+        onSubmit={handleSubmit}
+        isSubmitting={isUpdating}
+        submitButtonText="Update Employee"
+        submitButtonProps={{
+          variant: 'contained',
+          size: 'large',
+        }}
+      />
     </Container>
   );
 };

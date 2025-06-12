@@ -9,6 +9,7 @@ import {
     Paper,
     Button,
     Chip,
+    Typography,
 } from '@mui/material';
 import { Task, TaskStatus } from '@/utils/types';
 import { formatDate } from '@/utils/formatters';
@@ -24,20 +25,22 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDelete }) => {
     const getStatusColor = (status: TaskStatus) => {
         switch (status) {
-            case TaskStatus.COMPLETED:
-                return 'success';
-            case TaskStatus.IN_PROGRESS:
-                return 'primary';
-            case TaskStatus.PENDING:
-                return 'default';
-            case TaskStatus.UNCOMPLETED:
-                return 'warning';
-            case TaskStatus.CANCELLED:
-                return 'error';
-            default:
-                return 'default';
+            case TaskStatus.COMPLETED: return 'success';
+            case TaskStatus.IN_PROGRESS: return 'primary';
+            case TaskStatus.PENDING: return 'default';
+            case TaskStatus.UNCOMPLETED: return 'warning';
+            case TaskStatus.CANCELLED: return 'error';
+            default: return 'default';
         }
     };
+
+    if (tasks.length === 0) {
+        return (
+          <Typography variant="body1" align="center" sx={{ py: 4 }}>
+              No tasks found
+          </Typography>
+        );
+    }
 
     return (
       <TableContainer component={Paper}>
@@ -52,7 +55,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                   </TableRow>
               </TableHead>
               <TableBody>
-                  {tasks.map((task) => (
+                  {tasks.map(task => (
                     <TableRow key={task.id}>
                         <TableCell>{task.title}</TableCell>
                         <TableCell>{task.employeeName || task.employeeId}</TableCell>
@@ -65,16 +68,29 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                             />
                         </TableCell>
                         <TableCell align="right">
-                            <Button size="small" onClick={() => onViewDetails(task.id)} sx={{ mr: 1 }}>
+                            <Button
+                              size="small"
+                              onClick={() => onViewDetails(task.id)}
+                              sx={{ mr: 1 }}
+                            >
                                 View
                             </Button>
                             {onEdit && (
-                              <Button size="small" color="secondary" onClick={() => onEdit(task.id)} sx={{ mr: 1 }}>
+                              <Button
+                                size="small"
+                                color="secondary"
+                                onClick={() => onEdit(task.id)}
+                                sx={{ mr: 1 }}
+                              >
                                   Edit
                               </Button>
                             )}
                             {onDelete && (
-                              <Button size="small" color="error" onClick={() => onDelete(task.id)}>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => onDelete(task.id)}
+                              >
                                   Delete
                               </Button>
                             )}

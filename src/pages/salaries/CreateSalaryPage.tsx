@@ -1,56 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/salaries/CreateSalaryPage.tsx
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
-import { createSalary } from '@/api/salaries';
-import { getEmployees } from '@/api/employees';
-import SalaryForm from '../../components/salaries/SalaryForm';
-import PageHeader from '../../components/common/PageHeader';
+import { useCreateSalary } from '@/api/salaries';
+import { useEmployees } from '@/api/employees';
+import SalaryForm from '@/components/salaries/SalaryForm';
+import PageHeader from '@/components/common/PageHeader';
 import { Container, CircularProgress, Box } from '@mui/material';
-import { Employee, SalaryFormData } from '@/utils/types';
+import { SalaryFormData } from '@/utils/types';
 
 const CreateSalaryPage = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  const employeeId = searchParams.get('employeeId');
+  const { data: employees, isLoading: isEmployeesLoading } = useEmployees();
+  const { mutate: createSalary, isPending: isSubmitting } = useCreateSalary();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (error: any) {
-        showNotification('Failed to load employees', 'error');
-      } finally {
-        setIsLoading(false);
-      }
+  const handleSubmit = async (formData: SalaryFormData) => {
+    const salaryData = {
+      amount: Number(formData.amount),
+      paymentDate: formData.paymentDate?.toString() || new Date().toISOString(),
+      employeeId: formData.employeeId,
+      paymentReference: formData.paymentReference
     };
 
-    fetchEmployees();
-  }, [showNotification]);
-
-  const handleSubmit = async (formData: SalaryFormData) => {
-    setIsSubmitting(true);
-    try {
-      const salaryData = {
-        amount: Number(formData.amount),
-        paymentDate: formData.paymentDate?.toISOString() || new Date().toISOString(),
-        employeeId: formData.employeeId,
-        paymentReference: formData.paymentReference || undefined,
-      };
-
-      await createSalary(salaryData);
-      showNotification('Salary payment created successfully', 'success');
-      navigate('/salaries');
-    } catch (error: any) {
-      showNotification(error.message || 'Failed to create salary', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    createSalary(salaryData, {
+      onSuccess: () => {
+        showNotification('Salary payment created successfully', 'success');
+        navigate('/salaries');
+      },
+      onError: (error) => {
+        showNotification(error.message || 'Failed to create salary', 'error');
+      }
+    });
   };
 
-  if (isLoading) {
+  if (isEmployeesLoading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
         <CircularProgress />
@@ -62,9 +47,10 @@ const CreateSalaryPage = () => {
     <Container maxWidth="lg">
       <PageHeader title="Create Salary Payment" />
       <SalaryForm
-        employees={employees}
+        employees={employees || []}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        initialValues={employeeId ? { employeeId } : undefined}
       />
     </Container>
   );

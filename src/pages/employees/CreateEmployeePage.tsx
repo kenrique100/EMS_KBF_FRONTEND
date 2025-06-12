@@ -1,50 +1,57 @@
-import { useState } from 'react';
+// src/pages/employees/CreateEmployeePage.tsx
 import { useNavigate } from 'react-router-dom';
-import { createEmployee } from '@/api/employees';
-import EmployeeForm from '@/components/employees/EmployeeForm';
+import { Container } from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
-import { Container, Box } from '@mui/material';
-import { EmployeeFormData } from '@/utils/types';
+import EmployeeForm from '@/components/employees/EmployeeForm';
+import { useCreateEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
+import { EmployeeFormData } from '@/utils/types';
+import { uploadFile } from '@/api/files';
 
 const CreateEmployeePage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
+  const { mutateAsync: createEmployee, isPending: isCreating } = useCreateEmployee();
 
   const handleSubmit = async (formData: EmployeeFormData) => {
-    setIsSubmitting(true);
     try {
-      await createEmployee(formData);
+      const dataToSubmit = { ...formData };
+
+      if (formData.document instanceof File) {
+        const res = await uploadFile(formData.document, 'documents');
+        dataToSubmit.document = res.filename;
+      }
+
+      if (formData.profilePicture instanceof File) {
+        const res = await uploadFile(formData.profilePicture, 'profile-pictures');
+        dataToSubmit.profilePicture = res.filename;
+      }
+
+      await createEmployee(dataToSubmit);
       showNotification('Employee created successfully', 'success');
       navigate('/employees');
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to create employee';
-      showNotification(message, 'error');
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create employee';
+      showNotification(errorMessage, 'error');
     }
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <PageHeader
-          title="Create New Employee"
-          breadcrumbs={[
-            { label: 'Employees', path: '/employees' },
-            { label: 'Create', path: '' }
-          ]}
-        />
-      </Box>
+    <Container maxWidth="lg">
+      <PageHeader
+        title="Create Employee"
+        breadcrumbs={[
+          { label: 'Employees', path: '/employees' },
+          { label: 'Create', path: '' }
+        ]}
+      />
       <EmployeeForm
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={isCreating}
         submitButtonText="Create Employee"
         submitButtonProps={{
           variant: 'contained',
           size: 'large',
-          fullWidth: false,
         }}
       />
     </Container>

@@ -1,13 +1,14 @@
 // src/components/employees/EmployeeProfile.tsx
-import { Card, CardContent, Typography, Avatar, Box } from '@mui/material';
-import { Employee } from '@/utils/types';
+import { Card, CardContent, Typography, Avatar, Box, Divider, Chip, Grid } from '@mui/material';
 import { formatDate } from '@/utils/formatters';
+import React from 'react';
+import { Employee } from '@/utils/types';
 
 interface EmployeeProfileProps {
     employee: Employee;
 }
 
-const EmployeeProfile = ({ employee }: EmployeeProfileProps) => {
+const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
     const getProfilePictureUrl = () => {
         if (typeof employee.profilePicture === 'string') {
             return employee.profilePicture.startsWith('http')
@@ -30,22 +31,46 @@ const EmployeeProfile = ({ employee }: EmployeeProfileProps) => {
                       <Typography variant="subtitle1" color="text.secondary">
                           @{employee.username}
                       </Typography>
-                      <Typography variant="body1">
-                          Status: {employee.status}
-                      </Typography>
+                      <Chip
+                        label={employee.status}
+                        color={
+                            employee.status === 'ACTIVE' ? 'success' :
+                              employee.status === 'INACTIVE' ? 'error' :
+                                employee.status === 'ON_LEAVE' ? 'warning' : 'default'
+                        }
+                        sx={{ mt: 1 }}
+                      />
                   </Box>
               </Box>
 
-              <Typography variant="body1">
-                  Date of Employment: {formatDate(employee.dateOfEmployment)}
-              </Typography>
+              <Divider sx={{ my: 2 }} />
+
+              <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                      <Typography variant="body1" gutterBottom>
+                          <strong>Email:</strong> {employee.email || 'N/A'}
+                      </Typography>
+                      <Typography variant="body1" gutterBottom>
+                          <strong>Phone:</strong> {employee.phoneNumber || 'N/A'}
+                      </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                      <Typography variant="body1" gutterBottom>
+                          <strong>Department:</strong> {employee.department || 'N/A'}
+                      </Typography>
+                      <Typography variant="body1" gutterBottom>
+                          <strong>Date of Employment:</strong> {formatDate(employee.dateOfEmployment)}
+                      </Typography>
+                  </Grid>
+              </Grid>
+
               {employee.createdAt && (
-                <Typography variant="body1">
+                <Typography variant="body2" color="text.secondary" mt={2}>
                     Created: {formatDate(employee.createdAt)}
                 </Typography>
               )}
               {employee.updatedAt && (
-                <Typography variant="body1">
+                <Typography variant="body2" color="text.secondary">
                     Last Updated: {formatDate(employee.updatedAt)}
                 </Typography>
               )}
