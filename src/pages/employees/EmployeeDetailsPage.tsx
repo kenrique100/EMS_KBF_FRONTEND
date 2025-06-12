@@ -16,16 +16,16 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PageHeader from '@/components/common/PageHeader';
 import { useEmployeeById } from '@/api/employees';
 import { useDeleteEmployee, useUpdateEmployee } from '@/api/employees';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import EmployeeProfile from '@/components/employees/EmployeeProfile';
 import FileActions from '@/components/common/FileActions';
 import FileUpload from '@/components/common/FileUpload';
-import { Employee, EmployeeFormData, FileUploadResponse } from '@/utils/types';
+import { useAuthStore } from '@/store/authStore';
+import { Employee, EmployeeFormData, FileUploadResponse } from '@/types';
 
 const EmployeeDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const { data: employee, isLoading, refetch } = useEmployeeById(id!);

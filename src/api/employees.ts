@@ -1,75 +1,107 @@
-// src/api/employees.ts
-import api from '../config/axios';
-import { Employee, EmployeeFormData } from '@/utils/types';
-import { useQuery } from '@tanstack/react-query';
+import { Employee, EmployeeFormData } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import apiClient from '@/config/apiClient';
 
+// --- Utility function to build FormData ---
+const buildEmployeeFormData = (formData: EmployeeFormData): FormData => {
+    const form = new FormData();
+    form.append(
+      'employee',
+      JSON.stringify({
+          username: formData.username,
+          name: formData.name,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          department: formData.department,
+          password: formData.password,
+          dateOfEmployment: formData.dateOfEmployment?.toISOString(),
+          status: formData.status,
+      })
+    );
+
+    if (formData.profilePicture instanceof File) {
+        form.append('profilePicture', formData.profilePicture);
+    }
+
+    if (formData.document instanceof File) {
+        form.append('document', formData.document);
+    }
+
+    return form;
+};
+
+// --- API functions ---
 export const getEmployees = async (): Promise<Employee[]> => {
-    const response = await api.get('/api/employees');
-    return response.data;
+    const { data } = await apiClient.get('/api/employees');
+    return data;
 };
 
 export const getEmployeeById = async (id: string): Promise<Employee> => {
-    const response = await api.get(`/api/employees/${id}`);
-    return response.data;
+    const { data } = await apiClient.get(`/api/employees/${id}`);
+    return data;
 };
 
+export const createEmployee = async (formData: EmployeeFormData): Promise<Employee> => {
+    const form = buildEmployeeFormData(formData);
+    const { data } = await apiClient.post('/api/employees', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+};
+
+export const updateEmployee = async (id: string, formData: EmployeeFormData): Promise<Employee> => {
+    const form = buildEmployeeFormData(formData);
+    const { data } = await apiClient.put(`/api/employees/${id}`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+};
+
+export const deleteEmployee = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/employees/${id}`);
+};
+
+// --- React Query Hooks ---
+export const useEmployees = () =>
+  useQuery<Employee[], Error>({
+      queryKey: ['employees'],
+      queryFn: getEmployees,
+  });
+
 export const useEmployeeById = (id: string) =>
-  useQuery({
+  useQuery<Employee, Error>({
       queryKey: ['employee', id],
       queryFn: () => getEmployeeById(id),
       enabled: !!id,
   });
 
-export const createEmployee = async (formData: EmployeeFormData): Promise<Employee> => {
-    const data = new FormData();
-    data.append('username', formData.username);
-    data.append('name', formData.name);
-    data.append('password', formData.password);
-    data.append('dateOfEmployment', formData.dateOfEmployment?.toISOString() || '');
-    data.append('status', formData.status);
-
-    if (formData.profilePicture) {
-        data.append('profilePicture', formData.profilePicture);
-    }
-
-    if (formData.document) {
-        data.append('document', formData.document);
-    }
-
-    const response = await api.post('/api/employees', data, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
+export const useCreateEmployee = () => {
+    const queryClient = useQueryClient();
+    return useMutation<Employee, Error, EmployeeFormData>({
+        mutationFn: createEmployee,
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['employees'] });
         },
     });
-    return response.data;
 };
 
-export const updateEmployee = async (id: string, formData: EmployeeFormData): Promise<Employee> => {
-    const data = new FormData();
-    data.append('username', formData.username);
-    data.append('name', formData.name);
-    if (formData.password) {
-        data.append('password', formData.password);
-    }
-    data.append('dateOfEmployment', formData.dateOfEmployment?.toISOString() || '');
-    data.append('status', formData.status);
-
-    if (formData.profilePicture) {
-        data.append('profilePicture', formData.profilePicture);
-    }
-
-    if (formData.document) {
-        data.append('document', formData.document);
-    }
-
-    const response = await api.put(`/api/employees/${id}`, data, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
+export const useUpdateEmployee = () => {
+    const queryClient = useQueryClient();
+    return useMutation<Employee, Error, { id: string; data: EmployeeFormData }>({
+        mutationFn: ({ id, data }) => updateEmployee(id, data),
+        onSuccess: (_, variables) => {
+            void queryClient.invalidateQueries({ queryKey: ['employees'] });
+            void queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
         },
     });
-    return response.data;
 };
 
-export const deleteEmployee = async (id: string): Promise<void> => {
-    await api.delete(`/api/employees/${id}`);
+export const useDeleteEmployee = () => {
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: deleteEmployee,
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['employees'] });
+        },
+    });
 };

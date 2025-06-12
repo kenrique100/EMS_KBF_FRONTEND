@@ -1,4 +1,3 @@
-// src/pages/tasks/EmployeeTasksPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTasksByEmployee } from '@/api/tasks';
 import { useEmployeeById } from '@/api/employees';
@@ -7,12 +6,12 @@ import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 const EmployeeTasksPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
 
   const {
     data: employee,

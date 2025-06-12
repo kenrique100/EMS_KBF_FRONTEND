@@ -4,7 +4,7 @@ import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { uploadFile } from '@/api/files';
 import { useNotification } from '@/contexts/NotificationContext';
-import { FileUploadResponse } from '@/utils/types';
+import { FileUploadResponse } from '@/types';
 
 interface FileUploadProps {
   label: string;

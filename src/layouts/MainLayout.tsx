@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import {
     Box,
@@ -23,7 +23,7 @@ import {
     Payment as PaymentIcon,
     ExitToApp as ExitToAppIcon,
 } from '@mui/icons-material';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 const drawerWidth = 240;
 
@@ -46,20 +46,22 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
     }),
 }));
 
-// ✅ Accept children if you are using this component directly
 interface MainLayoutProps {
     children?: ReactNode;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = () => {
     const [open, setOpen] = useState(true);
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { user, logout } = useAuthStore();
 
     const toggleDrawer = () => setOpen(!open);
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
     };
 
     const menuItems = [

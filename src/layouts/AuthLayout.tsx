@@ -1,12 +1,7 @@
-// src/layouts/AuthLayout.tsx
 import { Box, Container, CssBaseline } from '@mui/material';
-import { ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
 
-interface AuthLayoutProps {
-  children?: ReactNode;
-}
-
-const AuthLayout = ({ children }: AuthLayoutProps) => {
+const AuthLayout = () => {
   return (
     <Container component="main" maxWidth="xs">
       <CssBaseline />
@@ -18,7 +13,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           alignItems: 'center',
         }}
       >
-        {children}
+        <Outlet />
       </Box>
     </Container>
   );

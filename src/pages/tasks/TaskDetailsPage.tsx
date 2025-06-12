@@ -7,13 +7,13 @@ import { Container, Button, Box, Typography, Paper, CircularProgress } from '@mu
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/utils/formatters';
+import { useAuthStore } from '@/store/authStore';
 
 const TaskDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
 
   const { data: task, isLoading, isError } = useTask(id!);
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTaskStatus();

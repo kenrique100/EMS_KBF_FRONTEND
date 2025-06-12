@@ -1,7 +1,6 @@
-// src/components/tasks/TaskStatusButton.tsx
+import { Task, TaskStatus } from '@/types';
 import { Button, Menu, MenuItem } from '@mui/material';
 import React, { useState } from 'react';
-import { Task, TaskStatus } from '@/utils/types';
 
 interface TaskStatusButtonProps {
   task: Task;

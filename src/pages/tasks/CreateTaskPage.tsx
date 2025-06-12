@@ -7,7 +7,7 @@ import TaskForm from '@/components/tasks/TaskForm';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, CircularProgress, Box } from '@mui/material';
 import { useNotification } from '@/contexts/NotificationContext';
-import { CreateTaskDTO } from '@/utils/types';
+import { CreateTaskDTO } from '@/types';
 
 const CreateTaskPage = () => {
   const [employees, setEmployees] = useState<{ id: string; name: string }[]>([]);

@@ -5,11 +5,11 @@ import TaskList from '@/components/tasks/TaskList';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 const TasksPage = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
   const { data: tasks, isLoading, isError } = useTasks();
 
   const handleViewDetails = (id: string) => {

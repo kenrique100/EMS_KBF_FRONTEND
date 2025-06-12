@@ -1,12 +1,31 @@
 // src/types.ts
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
+export type Role = 'USER' | 'ADMIN';
 
-export interface User {
-    id: string;
-    username: string;
-    name: string;
-    email: string;
-    roles: string[];
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: UserResponse;
+}
+
+export interface UserResponse {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: Role;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TokenRefreshResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface Employee {

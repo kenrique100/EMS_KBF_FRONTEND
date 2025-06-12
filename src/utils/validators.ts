@@ -1,5 +1,4 @@
-// src/utils/validators.ts
-import { CreateTaskDTO, EmployeeFormData, SalaryFormData, ValidationErrors } from '@/utils/types';
+import { CreateTaskDTO, EmployeeFormData, SalaryFormData, ValidationErrors } from '@/types';
 
 export const validateEmployee = (data: EmployeeFormData, isNew = false): ValidationErrors => {
     const errors: ValidationErrors = {};

@@ -1,11 +1,8 @@
-// src/components/auth/LoginForm.tsx
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { login as loginService } from '@/api/auth';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 import {
   TextField,
   Button,
@@ -26,19 +23,17 @@ const schema = yup.object().shape({
 });
 
 const LoginForm = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login } = useAuthStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(schema),
   });
 
   const mutation = useMutation({
-    mutationFn: (data: LoginFormData) => loginService(data.username, data.password),
-    onSuccess: (data) => {
-      login(data.user, data.accessToken, data.refreshToken);
-      navigate('/');
-    },
+    mutationFn: (data: LoginFormData) => login(data.username, data.password),
+    onError: (error: Error) => {
+      console.error('Login error:', error);
+    }
   });
 
   const onSubmit = (data: LoginFormData) => {

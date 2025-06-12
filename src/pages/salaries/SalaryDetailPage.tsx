@@ -2,7 +2,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSalaryById } from '@/api/salaries';
 import { useEmployeeById } from '@/api/employees';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useDeleteSalary } from '@/api/salaries';
 import {
@@ -21,6 +20,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { useState } from 'react';
+import { useAuthStore } from '@/store/authStore';
 
 const SalaryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ const SalaryDetailPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { mutate: deleteSalary } = useDeleteSalary();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
   const { showNotification } = useNotification();
 
   const handleDelete = () => {

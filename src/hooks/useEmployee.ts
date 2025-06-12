@@ -1,8 +1,9 @@
+/*
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEmployeeById } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
-import { Employee } from '@/utils/types';
+import { Employee } from '@/types';
 
 export const useEmployee = (id: string) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -23,8 +24,9 @@ export const useEmployee = (id: string) => {
       }
     };
 
-    fetchEmployee();
+    void fetchEmployee();
   }, [id, navigate, showNotification]);
 
   return { employee, isLoading };
 };
+*/

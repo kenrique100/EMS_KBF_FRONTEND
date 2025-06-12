@@ -7,13 +7,13 @@ import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 const EmployeeSalariesPage = () => {
   const { id } = useParams<{ id: string }>();
   const { data: salaries, isLoading: isSalariesLoading } = useSalariesByEmployee(id!);
   const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(id!);
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
   const navigate = useNavigate();
 
   const handleViewDetails = (salaryId: string) => {

@@ -1,44 +1,22 @@
-import api from '@/config/axios';
-import { jwtDecode } from 'jwt-decode';
+import apiClient from '@/config/apiClient';
+import { AuthResponse, LoginRequest, TokenRefreshResponse, UserResponse } from '@/types';
 
-export interface User {
-    id: string;
-    username: string;
-    name: string;
-    role: 'ADMIN' | 'USER';
-}
 
-export interface AuthResponse {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-}
-
-export const login = async (username: string, password: string): Promise<AuthResponse> => {
-    const response = await api.post('/auth/login', { username, password });
+export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
+    const response = await apiClient.post('/auth/login', credentials);
     return response.data;
 };
 
-export const refreshToken = async (token: string): Promise<AuthResponse> => {
-    const response = await api.post('/auth/refresh', { refreshToken: token });
+export const refreshToken = async (refreshToken: string): Promise<TokenRefreshResponse> => {
+    const response = await apiClient.post('/auth/refresh', { refreshToken });
     return response.data;
 };
 
 export const logout = async (): Promise<void> => {
-    try {
-        await api.post('/auth/logout');
-    } finally {
-        // Always clear tokens even if logout API fails
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-    }
+    await apiClient.post('/auth/logout');
 };
 
-export const validateToken = (token: string): boolean => {
-    try {
-        const decoded = jwtDecode<{ exp: number }>(token);
-        return decoded.exp * 1000 > Date.now();
-    } catch {
-        return false;
-    }
+export const getCurrentUser = async (): Promise<UserResponse> => {
+    const response = await apiClient.get('/auth/me');
+    return response.data;
 };

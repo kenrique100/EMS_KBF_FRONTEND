@@ -13,11 +13,11 @@ import EmployeeList from '@/components/employees/EmployeeList';
 import { useEmployees } from '@/api/employees';
 import { useDeleteEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/store/authStore';
 
 const EmployeesPage = () => {
     const navigate = useNavigate();
-    const { isAdmin } = useAuth();
+    const { isAdmin } = useAuthStore();
     const { showNotification } = useNotification();
     const { data: employees, isLoading, error } = useEmployees();
     const deleteMutation = useDeleteEmployee();

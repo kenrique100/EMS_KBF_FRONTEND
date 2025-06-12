@@ -4,15 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import LoginForm from '@/components/auth/LoginForm';
 
-const LoginPage = () => {
-  const { isAuthenticated, isLoading, initialized } = useAuthStore();
+export const LoginPage = () => {
+  const { isAuthenticated, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (initialized && !isLoading && isAuthenticated) {
+    if (!isLoading && isAuthenticated) {
       navigate('/', { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, initialized]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   return (
     <Container maxWidth="xs" sx={{ mt: 8 }}>
@@ -25,5 +25,3 @@ const LoginPage = () => {
     </Container>
   );
 };
-
-export default LoginPage;

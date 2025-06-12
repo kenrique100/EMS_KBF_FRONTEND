@@ -1,4 +1,3 @@
-// src/components/tasks/TaskList.tsx
 import {
     Table,
     TableBody,
@@ -11,9 +10,9 @@ import {
     Chip,
     Typography,
 } from '@mui/material';
-import { Task, TaskStatus } from '@/utils/types';
 import { formatDate } from '@/utils/formatters';
 import React from 'react';
+import { Task, TaskStatus } from '@/types';
 
 interface TaskListProps {
     tasks: Task[];

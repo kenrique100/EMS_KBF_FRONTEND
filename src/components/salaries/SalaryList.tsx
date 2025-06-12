@@ -11,8 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { formatDate, formatCurrency } from '@/utils/formatters';
-import { Salary } from '@/utils/types';
 import React from 'react';
+import { Salary } from '@/types';
 
 interface SalaryListProps {
   salaries: Salary[];

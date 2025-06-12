@@ -1,8 +1,7 @@
-// src/components/employees/EmployeeProfile.tsx
 import { Card, CardContent, Typography, Avatar, Box, Divider, Chip, Grid } from '@mui/material';
 import { formatDate } from '@/utils/formatters';
 import React from 'react';
-import { Employee } from '@/utils/types';
+import { Employee } from '@/types';
 
 interface EmployeeProfileProps {
     employee: Employee;

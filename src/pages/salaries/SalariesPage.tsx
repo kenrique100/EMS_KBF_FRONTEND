@@ -4,12 +4,12 @@ import SalaryList from '@/components/salaries/SalaryList';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
 
 const SalariesPage = () => {
   const { data: salaries, isLoading } = useSalaries();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuthStore();
   const navigate = useNavigate();
 
   const handleViewDetails = (id: string) => {

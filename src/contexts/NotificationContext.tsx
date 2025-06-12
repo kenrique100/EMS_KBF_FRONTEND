@@ -1,57 +1,64 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { Snackbar, Alert } from '@mui/material';
+import { registerNotificationFn } from '@/store/notificationService';
 
-export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+type NotificationSeverity = 'error' | 'success' | 'info' | 'warning';
 
-interface Notification {
-    open: boolean;
+interface NotificationState {
     message: string;
-    type: NotificationType;
+    severity: NotificationSeverity;
+    open: boolean;
 }
 
 interface NotificationContextType {
-    notification: Notification;
-    showNotification: (message: string, type?: NotificationType) => void;
+    showNotification: (message: string, severity?: NotificationSeverity) => void;
     hideNotification: () => void;
+    notification: NotificationState | null;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType>({
+    showNotification: () => {},
+    hideNotification: () => {},
+    notification: null,
+});
 
-interface NotificationProviderProps {
-    children: ReactNode;
-}
+export function NotificationProvider({ children }: { children: ReactNode }) {
+    const [notification, setNotification] = useState<NotificationState | null>(null);
 
-export const NotificationProvider = ({ children }: NotificationProviderProps) => {
-    const [notification, setNotification] = useState<Notification>({
-        open: false,
-        message: '',
-        type: 'info',
-    });
-
-    const showNotification = (message: string, type: NotificationType = 'info') => {
-        setNotification({ open: true, message, type });
+    const showNotification = (message: string, severity: NotificationSeverity = 'info') => {
+        setNotification({ message, severity, open: true });
     };
 
     const hideNotification = () => {
-        setNotification(prev => ({ ...prev, open: false }));
+        setNotification(prev => prev ? { ...prev, open: false } : null);
     };
 
-    const value = {
-        notification,
-        showNotification,
-        hideNotification
-    };
+    useEffect(() => {
+        registerNotificationFn(showNotification);
+    }, []);
 
     return (
-      <NotificationContext.Provider value={value}>
+      <NotificationContext.Provider value={{ showNotification, hideNotification, notification }}>
           {children}
+          {notification && (
+            <Snackbar
+              open={notification.open}
+              autoHideDuration={6000}
+              onClose={hideNotification}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert
+                  onClose={hideNotification}
+                  severity={notification.severity}
+                  sx={{ width: '100%' }}
+                  variant="filled"
+                >
+                    {notification.message}
+                </Alert>
+            </Snackbar>
+          )}
       </NotificationContext.Provider>
     );
-};
+}
 
-export const useNotification = () => {
-    const context = useContext(NotificationContext);
-    if (!context) {
-        throw new Error('useNotification must be used within a NotificationProvider');
-    }
-    return context;
-};
+export const useNotification = () => useContext(NotificationContext);

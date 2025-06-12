@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { validateSalary } from '@/utils/validators';
-import { SalaryFormData, ValidationErrors, Employee } from '@/utils/types';
+import { Employee, SalaryFormData, ValidationErrors } from '@/types';
 
 interface SalaryFormProps {
     salary?: SalaryFormData;

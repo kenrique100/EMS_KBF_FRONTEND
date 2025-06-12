@@ -6,7 +6,7 @@ import { useEmployees } from '@/api/employees';
 import SalaryForm from '@/components/salaries/SalaryForm';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, CircularProgress, Box } from '@mui/material';
-import { SalaryFormData } from '@/utils/types';
+import { SalaryFormData } from '@/types';
 
 const CreateSalaryPage = () => {
   const [searchParams] = useSearchParams();

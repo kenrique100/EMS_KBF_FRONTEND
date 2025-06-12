@@ -6,7 +6,7 @@ import { useEmployeeById } from '@/api/employees';
 import { useUpdateEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
 import EmployeeForm from '@/components/employees/EmployeeForm';
-import { EmployeeFormData } from '@/utils/types';
+import { EmployeeFormData } from '@/types';
 
 const EditEmployeePage = () => {
   const { id } = useParams<{ id: string }>();

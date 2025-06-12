@@ -13,8 +13,8 @@ import {
     Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { Task, CreateTaskDTO, ValidationErrors } from '@/utils/types';
 import { validateTask } from '@/utils/validators';
+import { CreateTaskDTO, Task, ValidationErrors } from '@/types';
 
 interface EmployeeOption {
     id: string;

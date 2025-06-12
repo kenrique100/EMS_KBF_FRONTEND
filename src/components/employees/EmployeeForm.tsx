@@ -15,8 +15,8 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import FileUpload from '../common/FileUpload';
 import FileActions from '../common/FileActions';
-import { EmployeeFormData, EmployeeStatus, FileUploadResponse } from '@/utils/types';
 import { validateEmployee } from '@/utils/validators';
+import { EmployeeFormData, EmployeeStatus, FileUploadResponse } from '@/types';
 
 interface EmployeeFormProps {
     employee?: EmployeeFormData;

@@ -1,12 +1,11 @@
-// src/pages/employees/CreateEmployeePage.tsx
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import { useCreateEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
-import { EmployeeFormData } from '@/utils/types';
 import { uploadFile } from '@/api/files';
+import { EmployeeFormData } from '@/types';
 
 const CreateEmployeePage = () => {
   const navigate = useNavigate();

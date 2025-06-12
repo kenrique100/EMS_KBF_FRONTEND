@@ -1,21 +1,20 @@
-import { Outlet } from 'react-router-dom';
-import { Box } from '@mui/material';
-import MainLayout from '@/layouts/MainLayout';
+import React from 'react';
+import { CssBaseline } from '@mui/material';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import AppRoutes from './routes/AppRoutes';
 
 function App() {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: 'background.default',
-      }}
-    >
-      <MainLayout>
-        <Outlet />
-      </MainLayout>
-    </Box>
+    <ThemeProvider>
+      <CssBaseline />
+      <NotificationProvider>
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
+      </NotificationProvider>
+    </ThemeProvider>
   );
 }
 
