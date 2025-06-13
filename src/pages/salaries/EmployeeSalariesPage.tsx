@@ -13,7 +13,7 @@ const EmployeeSalariesPage = () => {
   const { id } = useParams<{ id: string }>();
   const { data: salaries, isLoading: isSalariesLoading } = useSalariesByEmployee(id!);
   const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(id!);
-  const { isAdmin } = useAuthStore();
+  const hasRole = useAuthStore((state) => state.hasRole);
   const navigate = useNavigate();
 
   const handleViewDetails = (salaryId: string) => {
@@ -41,7 +41,7 @@ const EmployeeSalariesPage = () => {
             >
               Back to Employee
             </Button>
-            {isAdmin && (
+            {hasRole('ROLE_ADMIN') && (
               <Button
                 startIcon={<AddIcon />}
                 onClick={() => navigate(`/salaries/new?employeeId=${id}`)}

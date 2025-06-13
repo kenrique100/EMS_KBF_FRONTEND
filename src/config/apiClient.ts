@@ -1,8 +1,8 @@
+// src/config/apiClient.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/store/notificationService';
 
-// This declaration is actually used by the skipAuthRefresh and skipErrorNotification config options
 declare module 'axios' {
   interface AxiosRequestConfig {
     skipAuthRefresh?: boolean;
@@ -22,7 +22,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(
-  async (config) => {
+  (config) => {
     if (config.skipAuthRefresh) {
       return config;
     }
@@ -58,9 +58,9 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/auth/refresh`,
-            { refreshToken: refreshToken.startsWith('Bearer ') ? refreshToken : `Bearer ${refreshToken}` },
+          const response = await apiClient.post(
+            '/auth/refresh',
+            { refreshToken },
             { skipAuthRefresh: true, skipErrorNotification: true }
           );
 

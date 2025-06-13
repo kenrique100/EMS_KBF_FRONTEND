@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const SalariesPage = () => {
   const { data: salaries, isLoading } = useSalaries();
-  const { isAdmin } = useAuthStore();
+  const hasRole = useAuthStore((state) => state.hasRole);
   const navigate = useNavigate();
 
   const handleViewDetails = (id: string) => {
@@ -29,7 +29,7 @@ const SalariesPage = () => {
       <PageHeader
         title="Salary Payments"
         action={
-          isAdmin && (
+          hasRole('ROLE_ADMIN') && (
             <Button
               startIcon={<AddIcon />}
               onClick={() => navigate('/salaries/new')}

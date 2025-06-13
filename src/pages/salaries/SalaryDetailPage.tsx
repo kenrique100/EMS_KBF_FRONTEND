@@ -29,7 +29,7 @@ const SalaryDetailPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { mutate: deleteSalary } = useDeleteSalary();
   const navigate = useNavigate();
-  const { isAdmin } = useAuthStore();
+  const hasRole = useAuthStore((state) => state.hasRole);
   const { showNotification } = useNotification();
 
   const handleDelete = () => {
@@ -103,7 +103,7 @@ const SalaryDetailPage = () => {
         >
           Back to Salaries
         </Button>
-        {isAdmin && (
+        {hasRole('ROLE_ADMIN') && (
           <>
             <Button
               startIcon={<EditIcon />}

@@ -1,10 +1,11 @@
+// src/store/authStore.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import {
   login as apiLogin,
   logout as apiLogout,
   getCurrentUser,
-  refreshToken as apiRefreshToken
+  refreshToken as apiRefreshToken,
 } from '@/api/auth';
 import { Role, UserResponse } from '@/types';
 
@@ -14,8 +15,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   initialized: boolean;
-  isAdmin: boolean;
-  login: (username: string, password: string) => Promise<UserResponse>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initializeAuth: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
@@ -27,16 +27,12 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   immer((set, get) => ({
     user: null,
-    isAuthenticated: !!localStorage.getItem('accessToken'),
+    isAuthenticated: false,
     isLoading: false,
     error: null,
     initialized: false,
-    isAdmin: false,
 
-    setUser: (user) => set({
-      user,
-      isAdmin: user?.role === 'ADMIN'
-    }),
+    setUser: (user) => set({ user }),
 
     clearAuth: () => {
       localStorage.removeItem('accessToken');
@@ -45,8 +41,7 @@ export const useAuthStore = create<AuthState>()(
         user: null,
         isAuthenticated: false,
         error: null,
-        isAdmin: false,
-        initialized: true
+        initialized: true,
       });
     },
 
@@ -60,9 +55,7 @@ export const useAuthStore = create<AuthState>()(
           user,
           isAuthenticated: true,
           initialized: true,
-          isAdmin: user.role === 'ADMIN'
         });
-        return user;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Login failed';
         set({ error: errorMessage });
@@ -81,7 +74,6 @@ export const useAuthStore = create<AuthState>()(
       } finally {
         get().clearAuth();
         set({ initialized: true, isLoading: false });
-        window.location.reload();
       }
     },
 
@@ -99,7 +91,6 @@ export const useAuthStore = create<AuthState>()(
           user,
           isAuthenticated: true,
           initialized: true,
-          isAdmin: user.role === 'ADMIN'
         });
       } catch (err) {
         if (await get().refreshToken()) {
@@ -116,22 +107,16 @@ export const useAuthStore = create<AuthState>()(
       if (!refreshToken) return false;
 
       try {
-        const formattedRefreshToken = refreshToken.startsWith('Bearer ')
-          ? refreshToken
-          : `Bearer ${refreshToken}`;
-
-        const { accessToken, refreshToken: newRefreshToken } = await apiRefreshToken(formattedRefreshToken);
+        const { accessToken, refreshToken: newRefreshToken, user } =
+          await apiRefreshToken(refreshToken);
         localStorage.setItem('accessToken', accessToken);
         if (newRefreshToken) {
           localStorage.setItem('refreshToken', newRefreshToken);
         }
-
-        const user = await getCurrentUser();
         set({
           user,
           isAuthenticated: true,
           error: null,
-          isAdmin: user.role === 'ADMIN'
         });
         return true;
       } catch (err) {
@@ -142,8 +127,9 @@ export const useAuthStore = create<AuthState>()(
     },
 
     hasRole: (role) => {
-      const user = get().user;
-      return user?.role === role;
+      const { user } = get();
+      if (!user || !user.role) return false;
+      return user.role.includes(role);
     },
   }))
 );

@@ -1,3 +1,4 @@
+// src/components/auth/LoginForm.tsx
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,7 +11,9 @@ import {
   Typography,
   Link,
   CircularProgress,
+  Alert,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormData {
   username: string;
@@ -23,7 +26,8 @@ const schema = yup.object().shape({
 });
 
 const LoginForm = () => {
-  const { login } = useAuthStore();
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(schema),
@@ -31,6 +35,9 @@ const LoginForm = () => {
 
   const mutation = useMutation({
     mutationFn: (data: LoginFormData) => login(data.username, data.password),
+    onSuccess: () => {
+      navigate('/dashboard');
+    },
     onError: (error: Error) => {
       console.error('Login error:', error);
     }
@@ -46,11 +53,20 @@ const LoginForm = () => {
       onSubmit={handleSubmit(onSubmit)}
       sx={{
         mt: 3,
+        width: '100%',
+        maxWidth: 400,
+        mx: 'auto',
         '& .MuiTextField-root': {
           mb: 2,
         },
       }}
     >
+      {mutation.isError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {mutation.error.message}
+        </Alert>
+      )}
+
       <TextField
         fullWidth
         label="Username"
@@ -59,6 +75,7 @@ const LoginForm = () => {
         helperText={errors.username?.message}
         margin="normal"
         variant="outlined"
+        autoComplete="username"
       />
       <TextField
         fullWidth
@@ -69,6 +86,7 @@ const LoginForm = () => {
         helperText={errors.password?.message}
         margin="normal"
         variant="outlined"
+        autoComplete="current-password"
       />
       <Button
         type="submit"

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/DashboardPage.tsx
+import React, { useEffect } from 'react';
 import { useNotification } from '@/contexts/NotificationContext';
 import {
   Container,
@@ -13,17 +14,18 @@ import {
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
 } from '@mui/icons-material';
-import { getEmployees } from '@/api/employees';
-import { getTasks } from '@/api/tasks';
-import { getSalaries } from '@/api/salaries';
+import { useEmployees } from '@/api/employees';
+import { useTasks } from '@/api/tasks';
+import { useSalaries } from '@/api/salaries';
 
 interface StatCardProps {
   icon: React.ReactNode;
   title: string;
-  value: number;
+  value: number | string;
+  loading?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, title, value }) => (
+const StatCard: React.FC<StatCardProps> = ({ icon, title, value, loading }) => (
   <Paper sx={{ p: 3, height: '100%' }}>
     <Box display="flex" alignItems="center" mb={2}>
       {icon}
@@ -31,51 +33,48 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value }) => (
         {title}
       </Typography>
     </Box>
-    <Typography variant="h4">{value}</Typography>
+    {loading ? (
+      <CircularProgress size={24} />
+    ) : (
+      <Typography variant="h4">{value}</Typography>
+    )}
   </Paper>
 );
 
 const DashboardPage: React.FC = () => {
-  const [stats, setStats] = useState({
-    employeeCount: 0,
-    taskCount: 0,
-    salaryCount: 0,
-    loading: true,
-  });
-
   const { showNotification } = useNotification();
 
+  // Use individual queries for better error handling
+  const {
+    data: employees,
+    isLoading: isEmployeesLoading,
+    error: employeesError,
+  } = useEmployees();
+
+  const {
+    data: tasks,
+    isLoading: isTasksLoading,
+    error: tasksError,
+  } = useTasks();
+
+  const {
+    data: salaries,
+    isLoading: isSalariesLoading,
+    error: salariesError,
+  } = useSalaries();
+
+  // Show error notifications if any query fails
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [employees, tasks, salaries] = await Promise.all([
-          getEmployees(),
-          getTasks(),
-          getSalaries(),
-        ]);
-        setStats({
-          employeeCount: employees.length,
-          taskCount: tasks.length,
-          salaryCount: salaries.length,
-          loading: false,
-        });
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-        showNotification('Failed to load dashboard data', 'error');
-        setStats(prev => ({ ...prev, loading: false }));
-      }
-    };
-
-    void fetchStats(); // Explicitly handle the promise
-  }, [showNotification]);
-
-  if (stats.loading) {
-    return (
-      <Box display="flex" justifyContent="center" my={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+    if (employeesError) {
+      showNotification('Failed to load employees data', 'error');
+    }
+    if (tasksError) {
+      showNotification('Failed to load tasks data', 'error');
+    }
+    if (salariesError) {
+      showNotification('Failed to load salaries data', 'error');
+    }
+  }, [employeesError, tasksError, salariesError, showNotification]);
 
   return (
     <Container maxWidth="lg">
@@ -83,30 +82,33 @@ const DashboardPage: React.FC = () => {
         Dashboard
       </Typography>
       <Grid container spacing={3} sx={{ mt: 2 }}>
-              <Grid item xs={12} md={4}>
-                  <StatCard
-                    icon={<PeopleIcon color="primary" fontSize="large" />}
-                    title="Employees"
-                    value={stats.employeeCount}
-                  />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                  <StatCard
-                    icon={<AssignmentIcon color="secondary" fontSize="large" />}
-                    title="Tasks"
-                    value={stats.taskCount}
-                  />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                  <StatCard
-                    icon={<PaymentIcon color="success" fontSize="large" />}
-                    title="Salary Payments"
-                    value={stats.salaryCount}
-                  />
-              </Grid>
-          </Grid>
-      </Container>
-    );
+        <Grid item xs={12} md={4}>
+          <StatCard
+            icon={<PeopleIcon color="primary" fontSize="large" />}
+            title="Employees"
+            value={employees?.length ?? 0}
+            loading={isEmployeesLoading}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StatCard
+            icon={<AssignmentIcon color="secondary" fontSize="large" />}
+            title="Tasks"
+            value={tasks?.length ?? 0}
+            loading={isTasksLoading}
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StatCard
+            icon={<PaymentIcon color="success" fontSize="large" />}
+            title="Salary Payments"
+            value={salaries?.length ?? 0}
+            loading={isSalariesLoading}
+          />
+        </Grid>
+      </Grid>
+    </Container>
+  );
 };
 
 export default DashboardPage;

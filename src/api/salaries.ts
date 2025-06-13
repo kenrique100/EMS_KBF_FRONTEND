@@ -4,27 +4,27 @@ import { CreateSalaryPayload, Salary } from '@/types';
 import apiClient from '@/config/apiClient';
 
 export const getSalaries = async (): Promise<Salary[]> => {
-    const response = await apiClient.get('/api/salaries');
+    const response = await apiClient.get('/salaries');
     return response.data;
 };
 
 export const getSalaryById = async (id: string): Promise<Salary> => {
-    const response = await apiClient.get(`/api/salaries/${id}`);
+    const response = await apiClient.get(`/salaries/${id}`);
     return response.data;
 };
 
 export const getSalariesByEmployee = async (employeeId: string): Promise<Salary[]> => {
-    const response = await apiClient.get(`/api/salaries/employee/${employeeId}`);
+    const response = await apiClient.get(`/salaries/employee/${employeeId}`);
     return response.data;
 };
 
 export const createSalary = async (salaryData: CreateSalaryPayload): Promise<Salary> => {
-    const response = await apiClient.post('/api/salaries', salaryData);
+    const response = await apiClient.post('/salaries', salaryData);
     return response.data;
 };
 
 export const deleteSalary = async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/salaries/${id}`);
+    await apiClient.delete(`/salaries/${id}`);
 };
 
 // Add mutation hooks for better state management

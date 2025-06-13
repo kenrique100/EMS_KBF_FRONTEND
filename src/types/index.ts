@@ -1,6 +1,6 @@
 // src/types.ts
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
-export type Role = 'USER' | 'ADMIN';
+export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 
 export interface LoginRequest {
   username: string;
@@ -18,7 +18,7 @@ export interface UserResponse {
   username: string;
   name: string;
   email: string;
-  role: Role;
+  role: Role[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -26,6 +26,7 @@ export interface UserResponse {
 export interface TokenRefreshResponse {
   accessToken: string;
   refreshToken: string;
+  user:UserResponse;
 }
 
 export interface Employee {

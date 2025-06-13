@@ -1,3 +1,4 @@
+// src/router.tsx
 import {
   Route,
   createBrowserRouter,
@@ -38,12 +39,14 @@ export const router = createBrowserRouter(
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
+      {/* Redirect root to login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
 
           {/* Employees */}

@@ -32,18 +32,18 @@ const buildEmployeeFormData = (formData: EmployeeFormData): FormData => {
 
 // --- API functions ---
 export const getEmployees = async (): Promise<Employee[]> => {
-    const { data } = await apiClient.get('/api/employees');
+    const { data } = await apiClient.get('/employees');
     return data;
 };
 
 export const getEmployeeById = async (id: string): Promise<Employee> => {
-    const { data } = await apiClient.get(`/api/employees/${id}`);
+    const { data } = await apiClient.get(`/employees/${id}`);
     return data;
 };
 
 export const createEmployee = async (formData: EmployeeFormData): Promise<Employee> => {
     const form = buildEmployeeFormData(formData);
-    const { data } = await apiClient.post('/api/employees', form, {
+    const { data } = await apiClient.post('/employees', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
@@ -51,14 +51,14 @@ export const createEmployee = async (formData: EmployeeFormData): Promise<Employ
 
 export const updateEmployee = async (id: string, formData: EmployeeFormData): Promise<Employee> => {
     const form = buildEmployeeFormData(formData);
-    const { data } = await apiClient.put(`/api/employees/${id}`, form, {
+    const { data } = await apiClient.put(`/employees/${id}`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
 };
 
 export const deleteEmployee = async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/employees/${id}`);
+    await apiClient.delete(`/employees/${id}`);
 };
 
 // --- React Query Hooks ---
