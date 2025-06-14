@@ -1,4 +1,3 @@
-// src/pages/salaries/SalariesPage.tsx
 import { useSalaries } from '@/api/salaries';
 import SalaryList from '@/components/salaries/SalaryList';
 import PageHeader from '@/components/common/PageHeader';
@@ -9,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const SalariesPage = () => {
   const { data: salaries, isLoading } = useSalaries();
-  const hasRole = useAuthStore((state) => state.hasRole);
+  const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
   const navigate = useNavigate();
 
   const handleViewDetails = (id: string) => {
@@ -29,7 +28,7 @@ const SalariesPage = () => {
       <PageHeader
         title="Salary Payments"
         action={
-          hasRole('ROLE_ADMIN') && (
+          hasAdminRole && (
             <Button
               startIcon={<AddIcon />}
               onClick={() => navigate('/salaries/new')}

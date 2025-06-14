@@ -1,4 +1,3 @@
-// src/components/salaries/SalaryList.tsx
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import {
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import React from 'react';
 import { Salary } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 
 interface SalaryListProps {
   salaries: Salary[];
@@ -27,6 +27,8 @@ const SalaryList: React.FC<SalaryListProps> = ({
                                                  onEdit,
                                                  onDelete
                                                }) => {
+  const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
+
   if (salaries.length === 0) {
     return (
       <Typography variant="body1" align="center" sx={{ py: 4 }}>
@@ -45,7 +47,7 @@ const SalaryList: React.FC<SalaryListProps> = ({
             <TableCell>Payment Date</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Reference</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            {hasAdminRole && <TableCell align="right">Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -56,34 +58,36 @@ const SalaryList: React.FC<SalaryListProps> = ({
               <TableCell>{formatDate(salary.paymentDate)}</TableCell>
               <TableCell>{salary.status}</TableCell>
               <TableCell>{salary.paymentReference}</TableCell>
-              <TableCell align="right">
-                <Button
-                  size="small"
-                  onClick={() => onViewDetails(salary.id)}
-                  sx={{ mr: 1 }}
-                >
-                  View
-                </Button>
-                {onEdit && (
+              {hasAdminRole && (
+                <TableCell align="right">
                   <Button
                     size="small"
-                    color="secondary"
-                    onClick={() => onEdit(salary.id)}
+                    onClick={() => onViewDetails(salary.id)}
                     sx={{ mr: 1 }}
                   >
-                    Edit
+                    View
                   </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={() => onDelete(salary.id)}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </TableCell>
+                  {onEdit && (
+                    <Button
+                      size="small"
+                      color="secondary"
+                      onClick={() => onEdit(salary.id)}
+                      sx={{ mr: 1 }}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => onDelete(salary.id)}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

@@ -1,3 +1,4 @@
+// src/api/salaries.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/utils/constants';
 import { CreateSalaryPayload, Salary } from '@/types';
@@ -27,7 +28,6 @@ export const deleteSalary = async (id: string): Promise<void> => {
     await apiClient.delete(`/salaries/${id}`);
 };
 
-// Add mutation hooks for better state management
 export const useCreateSalary = () => {
     const queryClient = useQueryClient();
     return useMutation({

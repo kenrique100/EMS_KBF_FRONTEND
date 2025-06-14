@@ -1,4 +1,3 @@
-// src/pages/salaries/SalaryDetailPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSalaryById } from '@/api/salaries';
 import { useEmployeeById } from '@/api/employees';
@@ -29,7 +28,7 @@ const SalaryDetailPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { mutate: deleteSalary } = useDeleteSalary();
   const navigate = useNavigate();
-  const hasRole = useAuthStore((state) => state.hasRole);
+  const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
   const { showNotification } = useNotification();
 
   const handleDelete = () => {
@@ -103,7 +102,7 @@ const SalaryDetailPage = () => {
         >
           Back to Salaries
         </Button>
-        {hasRole('ROLE_ADMIN') && (
+        {hasAdminRole && (
           <>
             <Button
               startIcon={<EditIcon />}

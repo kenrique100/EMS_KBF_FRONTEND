@@ -1,64 +1,42 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { Snackbar, Alert } from '@mui/material';
-import { registerNotificationFn } from '@/store/notificationService';
+// src/contexts/NotificationContext.tsx
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { AlertColor } from '@mui/material';
 
-type NotificationSeverity = 'error' | 'success' | 'info' | 'warning';
-
-interface NotificationState {
+interface Notification {
     message: string;
-    severity: NotificationSeverity;
-    open: boolean;
+    severity: AlertColor;
 }
 
 interface NotificationContextType {
-    showNotification: (message: string, severity?: NotificationSeverity) => void;
-    hideNotification: () => void;
-    notification: NotificationState | null;
+    notification: Notification | null;
+    showNotification: (message: string, severity: AlertColor) => void;
+    clearNotification: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
-    showNotification: () => {},
-    hideNotification: () => {},
     notification: null,
+    showNotification: () => {},
+    clearNotification: () => {},
 });
 
-export function NotificationProvider({ children }: { children: ReactNode }) {
-    const [notification, setNotification] = useState<NotificationState | null>(null);
+export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [notification, setNotification] = useState<Notification | null>(null);
 
-    const showNotification = (message: string, severity: NotificationSeverity = 'info') => {
-        setNotification({ message, severity, open: true });
-    };
+    // Fixed: Used useCallback to memoize the function
+    const showNotification = useCallback((message: string, severity: AlertColor) => {
+        setNotification({ message, severity });
+        setTimeout(() => setNotification(null), 5000);
+    }, []);
 
-    const hideNotification = () => {
-        setNotification(prev => prev ? { ...prev, open: false } : null);
-    };
-
-    useEffect(() => {
-        registerNotificationFn(showNotification);
+    const clearNotification = useCallback(() => {
+        setNotification(null);
     }, []);
 
     return (
-      <NotificationContext.Provider value={{ showNotification, hideNotification, notification }}>
+      <NotificationContext.Provider value={{ notification, showNotification, clearNotification }}>
           {children}
-          {notification && (
-            <Snackbar
-              open={notification.open}
-              autoHideDuration={6000}
-              onClose={hideNotification}
-              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <Alert
-                  onClose={hideNotification}
-                  severity={notification.severity}
-                  sx={{ width: '100%' }}
-                  variant="filled"
-                >
-                    {notification.message}
-                </Alert>
-            </Snackbar>
-          )}
       </NotificationContext.Provider>
     );
-}
+};
 
 export const useNotification = () => useContext(NotificationContext);

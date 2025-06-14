@@ -55,7 +55,7 @@ export const router = createBrowserRouter(
             <Route path="new" element={<AdminRoute><CreateEmployeePage /></AdminRoute>} />
             <Route path=":id" element={<EmployeeDetailsPage />} />
             <Route path=":id/edit" element={<AdminRoute><EditEmployeePage /></AdminRoute>} />
-            <Route path=":id/salaries" element={<EmployeeSalariesPage />} />
+            <Route path=":id/salaries" element={<AdminRoute><EmployeeSalariesPage /></AdminRoute>} />
           </Route>
 
           {/* Tasks */}
@@ -66,7 +66,7 @@ export const router = createBrowserRouter(
             <Route path="employee/:id" element={<EmployeeTasksPage />} />
           </Route>
 
-          {/* Salaries */}
+          {/* Salaries - All routes protected by AdminRoute */}
           <Route path="salaries">
             <Route index element={<AdminRoute><SalariesPage /></AdminRoute>} />
             <Route path="new" element={<AdminRoute><CreateSalaryPage /></AdminRoute>} />
