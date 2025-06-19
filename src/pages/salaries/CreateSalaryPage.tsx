@@ -1,4 +1,3 @@
-// src/pages/salaries/CreateSalaryPage.tsx
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
 import { useCreateSalary } from '@/api/salaries';
@@ -6,7 +5,7 @@ import { useEmployees } from '@/api/employees';
 import SalaryForm from '@/components/salaries/SalaryForm';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, CircularProgress, Box } from '@mui/material';
-import { SalaryFormData } from '@/types';
+import { SalaryFormData, CreateSalaryPayload, SalaryPaymentDTO } from '@/types';
 
 const CreateSalaryPage = () => {
   const [searchParams] = useSearchParams();
@@ -17,14 +16,14 @@ const CreateSalaryPage = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (formData: SalaryFormData) => {
-    const salaryData = {
+    const salaryData: CreateSalaryPayload = {
       amount: Number(formData.amount),
-      paymentDate: formData.paymentDate?.toString() || new Date().toISOString(),
+      paymentDate: formData.paymentDate?.toISOString() || new Date().toISOString(),
       employeeId: formData.employeeId,
-      paymentReference: formData.paymentReference
+      paymentReference: formData.paymentReference || '',
     };
 
-    createSalary(salaryData, {
+    createSalary(salaryData as SalaryPaymentDTO, {
       onSuccess: () => {
         showNotification('Salary payment created successfully', 'success');
         navigate('/salaries');
@@ -50,7 +49,9 @@ const CreateSalaryPage = () => {
         employees={employees || []}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-        initialValues={employeeId ? { employeeId } : undefined}
+        initialValues={employeeId ? {
+          employeeId: parseInt(employeeId, 10)
+        } : undefined}
       />
     </Container>
   );

@@ -22,7 +22,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api', // Added /api here
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -50,6 +50,7 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
 
+    // Handle 401 Unauthorized
     if (error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/')) {
@@ -83,16 +84,20 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Handle 403 Forbidden
+    if (error.response?.status === 403) {
+      if (!originalRequest.skipErrorNotification) {
+        notify('You do not have permission to access this resource', 'error');
+      }
+      return Promise.reject(error);
+    }
+
     if (originalRequest.skipErrorNotification) {
       return Promise.reject(error);
     }
 
     const errorMessage = getErrorMessage(error);
-    if (!originalRequest.skipAuthRefresh && error.response?.status === 401) {
-      notify('Session expired. Please login again.', 'error');
-    } else {
-      notify(errorMessage, 'error');
-    }
+    notify(errorMessage, 'error');
 
     return Promise.reject(error);
   }
@@ -102,19 +107,12 @@ function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
   if (error.response) {
     if (error.response.status === 403) {
       return 'You do not have permission to perform this action';
-    } else if (error.response.status >= 500) {
-      return 'Server error. Please try again later.';
     }
     return error.response.data?.message ||
       error.response.data?.error ||
-      error.message ||
       'An unexpected error occurred';
-  } else if (error.code === 'ECONNABORTED') {
-    return 'Request timeout. Please try again.';
-  } else if (error.code === 'ERR_NETWORK') {
-    return 'Network error. Please check your connection.';
   }
-  return 'An unexpected error occurred';
+  return error.message || 'An unexpected error occurred';
 }
 
 export default apiClient;

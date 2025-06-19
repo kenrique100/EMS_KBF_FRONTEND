@@ -1,4 +1,3 @@
-// src/pages/employees/EditEmployeePage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Box, CircularProgress } from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
@@ -12,12 +11,13 @@ const EditEmployeePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
-  const { data: employee, isLoading } = useEmployeeById(id!);
+  const employeeId = id ? parseInt(id, 10) : 0;
+  const { data: employee, isLoading } = useEmployeeById(employeeId);
   const { mutateAsync: updateEmployee, isPending: isUpdating } = useUpdateEmployee();
 
   const handleSubmit = async (formData: EmployeeFormData) => {
     try {
-      await updateEmployee({ id: id!, data: formData });
+      await updateEmployee({ id: employeeId, data: formData });
       showNotification('Employee updated successfully', 'success');
       navigate(`/employees/${id}`);
     } catch (error) {
@@ -41,11 +41,13 @@ const EditEmployeePage = () => {
     email: employee.email || '',
     phoneNumber: employee.phoneNumber || '',
     department: employee.department || '',
-    password: '',
+    password: '', // Don't prefill passwords
     dateOfEmployment: employee.dateOfEmployment ? new Date(employee.dateOfEmployment) : null,
     status: employee.status,
-    profilePicture: employee.profilePicture || null,
-    document: employee.document || null,
+    profilePicturePath: employee.profilePicturePath || null,
+    documentPath: employee.documentPath || null,
+    profilePictureFile: null,
+    documentFile: null,
   };
 
   return (

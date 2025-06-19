@@ -1,10 +1,11 @@
 // src/router.tsx
 import {
   Route,
+  Navigate,
   createBrowserRouter,
   createRoutesFromElements,
-  Navigate,
 } from 'react-router-dom';
+
 import PrivateRoute from '@/routes/PrivateRoute';
 import AdminRoute from '@/routes/AdminRoute';
 
@@ -13,6 +14,7 @@ import AuthLayout from '@/layouts/AuthLayout';
 
 import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
+
 import EmployeesPage from '@/pages/employees/EmployeesPage';
 import CreateEmployeePage from '@/pages/employees/CreateEmployeePage';
 import EditEmployeePage from '@/pages/employees/EditEmployeePage';
@@ -30,24 +32,34 @@ import EmployeeSalariesPage from '@/pages/salaries/EmployeeSalariesPage';
 
 import UnauthorizedPage from '@/pages/UnauthorizedPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import EditSalaryPage from '@/pages/salaries/EditSalaryPage';
+import EditTaskPage from '@/pages/tasks/EditTaskPage';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <Route>
+      {/* Redirect root path to login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
       {/* Public Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
-      {/* Redirect root to login */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-
+      {/* Unauthorized fallback */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
+          {/* Dashboard */}
           <Route path="dashboard" element={<DashboardPage />} />
+
+          {/* Profile */}
+          <Route path="profile">
+            <Route index element={<EmployeeDetailsPage />} />
+            <Route path="edit" element={<EmployeeDetailsPage />} />
+          </Route>
 
           {/* Employees */}
           <Route path="employees">
@@ -58,19 +70,19 @@ export const router = createBrowserRouter(
             <Route path=":id/salaries" element={<AdminRoute><EmployeeSalariesPage /></AdminRoute>} />
           </Route>
 
-          {/* Tasks */}
           <Route path="tasks">
             <Route index element={<TasksPage />} />
             <Route path="new" element={<AdminRoute><CreateTaskPage /></AdminRoute>} />
             <Route path=":id" element={<TaskDetailsPage />} />
+            <Route path=":id/edit" element={<AdminRoute><EditTaskPage /></AdminRoute>} />
             <Route path="employee/:id" element={<EmployeeTasksPage />} />
           </Route>
 
-          {/* Salaries - All routes protected by AdminRoute */}
           <Route path="salaries">
             <Route index element={<AdminRoute><SalariesPage /></AdminRoute>} />
             <Route path="new" element={<AdminRoute><CreateSalaryPage /></AdminRoute>} />
             <Route path=":id" element={<AdminRoute><SalaryDetailPage /></AdminRoute>} />
+            <Route path=":id/edit" element={<AdminRoute><EditSalaryPage /></AdminRoute>} />
             <Route path="employee/:id" element={<AdminRoute><EmployeeSalariesPage /></AdminRoute>} />
           </Route>
         </Route>

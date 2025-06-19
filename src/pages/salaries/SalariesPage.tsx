@@ -5,14 +5,30 @@ import { Container, Button, Box, CircularProgress } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { Salary } from '@/types';
 
 const SalariesPage = () => {
   const { data: salaries, isLoading } = useSalaries();
   const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
   const navigate = useNavigate();
 
-  const handleViewDetails = (id: string) => {
+  // Convert to required Salary type
+  const formattedSalaries: Salary[] = (salaries || []).map(s => ({
+    ...s,
+    paymentReference: s.paymentReference || ''
+  }));
+
+  const handleViewDetails = (id: number) => {
     navigate(`/salaries/${id}`);
+  };
+
+  const handleEdit = (id: number) => {
+    navigate(`/salaries/${id}/edit`);
+  };
+
+  const handleDelete = (id: number) => {
+    // Delete logic would be implemented here
+    console.log('Delete salary', id);
   };
 
   if (isLoading) {
@@ -40,8 +56,10 @@ const SalariesPage = () => {
         }
       />
       <SalaryList
-        salaries={salaries || []}
+        salaries={formattedSalaries}
         onViewDetails={handleViewDetails}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </Container>
   );

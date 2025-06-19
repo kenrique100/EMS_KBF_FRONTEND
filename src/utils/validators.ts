@@ -1,36 +1,48 @@
-import { CreateTaskDTO, EmployeeFormData, SalaryFormData, ValidationErrors } from '@/types';
+import {
+  CreateTaskDTO,
+  EmployeeFormData,
+  EmployeeUpdateDTO,
+  SalaryFormData,
+  ValidationErrors,
+} from '@/types';
 
-export const validateEmployee = (data: EmployeeFormData, isNew = false): ValidationErrors => {
-    const errors: ValidationErrors = {};
+// src/utils/validators.ts
+export const validateEmployee = (
+  formData: EmployeeFormData | EmployeeUpdateDTO,
+  isNewEmployee: boolean = false
+): Record<string, string> => {
+    const errors: Record<string, string> = {};
 
-    if (isNew && !data.username?.trim()) {
+    if (isNewEmployee && !formData.username) {
         errors.username = 'Username is required';
-    } else if (isNew && data.username && data.username.length < 3) {
-        errors.username = 'Username must be at least 3 characters';
     }
 
-    if (!data.name?.trim()) {
+    if (!formData.name) {
         errors.name = 'Name is required';
     }
 
-    if (isNew && !data.password?.trim()) {
-        errors.password = 'Password is required';
-    } else if (data.password && data.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!data.dateOfEmployment) {
-        errors.dateOfEmployment = 'Date of employment is required';
-    }
-
-    if (!data.email?.trim()) {
+    if (!formData.email) {
         errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         errors.email = 'Invalid email format';
     }
 
-    if (!data.department?.trim()) {
+    if (formData.phoneNumber && !/^\+?[0-9\s-]{10,}$/.test(formData.phoneNumber)) {
+        errors.phoneNumber = 'Invalid phone number format';
+    }
+
+    if (isNewEmployee && !formData.password) {
+        errors.password = 'Password is required';
+    } else if (formData.password && formData.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!formData.department) {
         errors.department = 'Department is required';
+    }
+
+    if (!formData.dateOfEmployment) {
+        errors.dateOfEmployment = 'Date of employment is required';
     }
 
     return errors;

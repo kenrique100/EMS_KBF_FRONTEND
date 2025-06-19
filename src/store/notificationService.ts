@@ -1,15 +1,19 @@
-type NotificationFn = (message: string, severity: 'error' | 'success' | 'info' | 'warning') => void;
+// src/services/notificationService.ts
+let notificationFunction: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
 
-let showNotificationFn: NotificationFn | null = null;
-
-export const registerNotificationFn = (fn: NotificationFn) => {
-  showNotificationFn = fn;
+export const registerNotification = (
+  fn: typeof notificationFunction
+) => {
+  notificationFunction = fn;
 };
 
-export const notify = (message: string, severity: 'error' | 'success' | 'info' | 'warning' = 'info') => {
-  if (showNotificationFn) {
-    showNotificationFn(message, severity);
+export const notify = (
+  message: string,
+  severity: 'success' | 'error' | 'warning' | 'info' = 'info'
+) => {
+  if (notificationFunction) {
+    notificationFunction(message, severity);
   } else {
-    console.warn('Notification function not registered');
+    console.log(`[Notification ${severity}]: ${message}`);
   }
 };

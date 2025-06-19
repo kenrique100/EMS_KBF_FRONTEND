@@ -1,4 +1,3 @@
-// src/components/tasks/TaskForm.tsx
 import React, { useState, useEffect } from 'react';
 import {
     TextField,
@@ -9,89 +8,93 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    SelectChangeEvent,
-    Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { validateTask } from '@/utils/validators';
-import { CreateTaskDTO, Task, ValidationErrors } from '@/types';
+import { CreateTaskDTO, TaskStatus } from '@/types';
 
 interface EmployeeOption {
-    id: string;
+    id: number;
     name: string;
 }
 
 interface TaskFormProps {
-    task?: Task;
     employees: EmployeeOption[];
     onSubmit: (data: CreateTaskDTO) => void;
     isSubmitting: boolean;
     submitButtonText?: string;
+    initialData?: Partial<CreateTaskDTO>;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
-                                               task,
                                                employees,
                                                onSubmit,
                                                isSubmitting,
                                                submitButtonText = 'Save',
+                                               initialData
                                            }) => {
     const [formData, setFormData] = useState<CreateTaskDTO>({
         title: '',
         description: '',
-        deadline: new Date(),
-        employeeId: '',
+        deadline: new Date().toISOString(),
+        employeeId: 0,
+        status: TaskStatus.PENDING,
         expectedHours: undefined,
+        actualHours: undefined,
+        startTime: undefined,
+        stopTime: undefined,
+        ...initialData
     });
 
-    const [errors, setErrors] = useState<ValidationErrors>({});
-
     useEffect(() => {
-        if (task) {
-            setFormData({
-                title: task.title,
-                description: task.description || '',
-                deadline: new Date(task.deadline),
-                employeeId: task.employeeId,
-                expectedHours: task.expectedHours,
-            });
+        if (initialData) {
+            setFormData(prev => ({
+                ...prev,
+                ...initialData
+            }));
         }
-    }, [task]);
+    }, [initialData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
+        setFormData(prev => ({
             ...prev,
-            [name]: name === 'expectedHours' ? (value ? Number(value) : undefined) : value,
+            [name]: name === 'expectedHours' || name === 'actualHours'
+              ? (value ? Number(value) : undefined)
+              : value
         }));
     };
 
-    const handleSelectChange = (e: SelectChangeEvent) => {
+    const handleSelectChange = (e: { target: { name?: string; value: unknown } }) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        if (name) {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleDateChange = (date: Date | null) => {
         if (date) {
-            setFormData((prev) => ({ ...prev, deadline: date }));
+            setFormData(prev => ({
+                ...prev,
+                deadline: date.toISOString()
+            }));
         }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const validationErrors = validateTask(formData);
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
         onSubmit(formData);
     };
 
+    // Convert deadline string to Date object for the DateTimePicker
+    const deadlineDate = formData.deadline
+      ? new Date(formData.deadline)
+      : new Date();
+
     return (
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={2}>
               <Grid item xs={12}>
                   <TextField
@@ -100,12 +103,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    error={!!errors.title}
-                    helperText={errors.title}
                     required
                   />
               </Grid>
-
               <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -117,26 +117,22 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     rows={4}
                   />
               </Grid>
-
               <Grid item xs={12} md={6}>
                   <DateTimePicker
                     label="Deadline"
-                    value={formData.deadline}
+                    value={deadlineDate}
                     onChange={handleDateChange}
                     minDateTime={new Date()}
                     slotProps={{
                         textField: {
                             fullWidth: true,
-                            error: !!errors.deadline,
-                            helperText: errors.deadline,
-                            required: true,
-                        },
+                            required: true
+                        }
                     }}
                   />
               </Grid>
-
               <Grid item xs={12} md={6}>
-                  <FormControl fullWidth error={!!errors.employeeId} required>
+                  <FormControl fullWidth required>
                       <InputLabel>Employee</InputLabel>
                       <Select
                         name="employeeId"
@@ -144,33 +140,26 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         label="Employee"
                         onChange={handleSelectChange}
                       >
-                          {employees.map((employee) => (
+                          {employees.map(employee => (
                             <MenuItem key={employee.id} value={employee.id}>
                                 {employee.name}
                             </MenuItem>
                           ))}
                       </Select>
-                      {errors.employeeId && (
-                        <Typography variant="caption" color="error">
-                            {errors.employeeId}
-                        </Typography>
-                      )}
                   </FormControl>
               </Grid>
-
               <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Expected Hours (optional)"
+                    label="Expected Hours"
                     name="expectedHours"
                     type="number"
-                    value={formData.expectedHours ?? ''}
+                    value={formData.expectedHours || ''}
                     onChange={handleChange}
                     inputProps={{ min: 0 }}
                   />
               </Grid>
           </Grid>
-
           <Box mt={3} display="flex" justifyContent="flex-end">
               <Button
                 type="submit"

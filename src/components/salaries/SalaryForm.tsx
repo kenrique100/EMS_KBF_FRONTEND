@@ -1,4 +1,3 @@
-// src/components/salaries/SalaryForm.tsx
 import React, { useState, useEffect } from 'react';
 import {
     TextField,
@@ -14,7 +13,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { validateSalary } from '@/utils/validators';
-import { Employee, SalaryFormData, ValidationErrors } from '@/types';
+import { Employee, SalaryFormData, ValidationErrors, PaymentStatus } from '@/types';
 
 interface SalaryFormProps {
     salary?: SalaryFormData;
@@ -34,10 +33,12 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
                                                    initialValues
                                                }) => {
     const [formData, setFormData] = useState<SalaryFormData>({
-        amount: '',
+        id: 0,
+        amount: 0,
         paymentDate: null,
-        employeeId: '',
+        employeeId: 0,
         paymentReference: '',
+        status: PaymentStatus.PENDING,
     });
 
     const [errors, setErrors] = useState<ValidationErrors>({});
@@ -45,32 +46,44 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
     useEffect(() => {
         if (salary) {
             setFormData({
-                amount: salary.amount.toString(),
-                paymentDate: salary.paymentDate ? new Date(salary.paymentDate) : null,
+                id: salary.id,
+                amount: salary.amount,
+                paymentDate: salary.paymentDate,
                 employeeId: salary.employeeId,
                 paymentReference: salary.paymentReference || '',
+                status: salary.status
             });
         } else if (initialValues) {
             setFormData(prev => ({
                 ...prev,
-                ...initialValues,
-                paymentDate: initialValues.paymentDate ? new Date(initialValues.paymentDate) : null
+                id: initialValues.id || 0,
+                amount: initialValues.amount || 0,
+                paymentDate: initialValues.paymentDate || null,
+                employeeId: initialValues.employeeId || 0,
+                paymentReference: initialValues.paymentReference || '',
+                status: initialValues.status || PaymentStatus.PENDING
             }));
         }
     }, [salary, initialValues]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === 'amount' ? Number(value) : value
+        }));
     };
 
-    const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    const handleSelectChange = (event: SelectChangeEvent<number | PaymentStatus>) => {
         const { name, value } = event.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData(prev => ({
+            ...prev,
+            [name as keyof SalaryFormData]: value
+        }));
     };
 
     const handleDateChange = (date: Date | null) => {
-        setFormData((prev) => ({ ...prev, paymentDate: date }));
+        setFormData(prev => ({ ...prev, paymentDate: date }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -81,15 +94,7 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
             return;
         }
 
-        const submitData: SalaryFormData = {
-            ...formData,
-            amount: Number(formData.amount),
-            paymentDate: formData.paymentDate || new Date(),
-            paymentReference: formData.paymentReference || '',
-            employeeId: formData.employeeId
-        };
-
-        onSubmit(submitData);
+        onSubmit(formData);
     };
 
     return (
@@ -153,6 +158,29 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
                   </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
+                  <FormControl fullWidth margin="normal" error={!!errors.status}>
+                      <InputLabel id="status-select-label">Status</InputLabel>
+                      <Select
+                        labelId="status-select-label"
+                        name="status"
+                        value={formData.status}
+                        label="Status"
+                        onChange={handleSelectChange}
+                      >
+                          {Object.values(PaymentStatus).map(status => (
+                            <MenuItem key={status} value={status}>
+                                {status}
+                            </MenuItem>
+                          ))}
+                      </Select>
+                      {errors.status && (
+                        <Typography variant="caption" color="error">
+                            {errors.status}
+                        </Typography>
+                      )}
+                  </FormControl>
+              </Grid>
+              <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Payment Reference"

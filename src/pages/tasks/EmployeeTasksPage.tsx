@@ -11,19 +11,19 @@ import { useAuthStore } from '@/store/authStore';
 const EmployeeTasksPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuthStore();
+  const hasAdminRole = useAuthStore((state) => state.hasRole('ROLE_ADMIN'));
 
   const {
     data: employee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useEmployeeById(id!);
+  } = useEmployeeById(Number(id));
 
   const {
     data: tasks,
     isLoading: isTasksLoading,
     isError: isTasksError,
-  } = useTasksByEmployee(id!);
+  } = useTasksByEmployee(Number(id));
 
   const handleViewDetails = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
@@ -60,7 +60,7 @@ const EmployeeTasksPage = () => {
             >
               Back to Employee
             </Button>
-            {isAdmin && (
+            {hasAdminRole && (
               <Button
                 startIcon={<AddIcon />}
                 onClick={() => navigate(`/tasks/new?employeeId=${id}`)}

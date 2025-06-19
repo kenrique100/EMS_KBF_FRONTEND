@@ -16,9 +16,9 @@ import { useAuthStore } from '@/store/authStore';
 
 interface SalaryListProps {
   salaries: Salary[];
-  onViewDetails: (id: string) => void;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onViewDetails: (id: number) => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 const SalaryList: React.FC<SalaryListProps> = ({
@@ -53,7 +53,7 @@ const SalaryList: React.FC<SalaryListProps> = ({
         <TableBody>
           {salaries.map((salary) => (
             <TableRow key={salary.id}>
-              <TableCell>{salary.employeeName || salary.employeeId}</TableCell>
+              <TableCell>{salary.employeeName || `Employee #${salary.employeeId}`}</TableCell>
               <TableCell>{formatCurrency(salary.amount)}</TableCell>
               <TableCell>{formatDate(salary.paymentDate)}</TableCell>
               <TableCell>{salary.status}</TableCell>

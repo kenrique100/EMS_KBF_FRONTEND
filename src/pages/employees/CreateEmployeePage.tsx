@@ -14,16 +14,16 @@ const CreateEmployeePage = () => {
 
   const handleSubmit = async (formData: EmployeeFormData) => {
     try {
-      const dataToSubmit = { ...formData };
+      const dataToSubmit: EmployeeFormData = { ...formData };
 
-      if (formData.document instanceof File) {
-        const res = await uploadFile(formData.document, 'documents');
-        dataToSubmit.document = res.filename;
+      if (formData.documentFile instanceof File) {
+        const { filename } = await uploadFile(formData.documentFile, 'documents');
+        dataToSubmit.documentPath = filename;
       }
 
-      if (formData.profilePicture instanceof File) {
-        const res = await uploadFile(formData.profilePicture, 'profile-pictures');
-        dataToSubmit.profilePicture = res.filename;
+      if (formData.profilePictureFile instanceof File) {
+        const { filename } = await uploadFile(formData.profilePictureFile, 'profiles');
+        dataToSubmit.profilePicturePath = filename;
       }
 
       await createEmployee(dataToSubmit);

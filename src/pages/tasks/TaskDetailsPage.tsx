@@ -1,6 +1,5 @@
-// src/pages/tasks/TaskDetailsPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTask, useUpdateTaskStatus, useDeleteTask } from '@/api/tasks';
+import { useTaskById, useUpdateTaskStatus, useDeleteTask } from '@/api/tasks';
 import TaskStatusButton from '@/components/tasks/TaskStatusButton';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, Button, Box, Typography, Paper, CircularProgress } from '@mui/material';
@@ -13,21 +12,25 @@ import { useAuthStore } from '@/store/authStore';
 const TaskDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuthStore();
+  const hasAdminRole = useAuthStore((state) => state.hasRole('ROLE_ADMIN'));
 
-  const { data: task, isLoading, isError } = useTask(id!);
+  const { data: task, isLoading, isError } = useTaskById(Number(id));
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTaskStatus();
   const { mutate: deleteTask } = useDeleteTask();
 
   const handleStatusChange = (action: 'START' | 'STOP' | 'COMPLETE') => {
     if (id) {
-      updateStatus({ taskId: id, action });
+      updateStatus({ taskId: Number(id), action });
     }
+  };
+
+  const handleEdit = () => {
+    navigate(`/tasks/${id}/edit`);
   };
 
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      deleteTask(id!, {
+      deleteTask(Number(id), {
         onSuccess: () => {
           navigate('/tasks');
         },
@@ -73,11 +76,11 @@ const TaskDetailsPage = () => {
             >
               Back
             </Button>
-            {isAdmin && (
+            {hasAdminRole && (
               <>
                 <Button
                   startIcon={<EditIcon />}
-                  onClick={() => navigate(`/tasks/${id}/edit`)}
+                  onClick={handleEdit}
                   variant="contained"
                 >
                   Edit

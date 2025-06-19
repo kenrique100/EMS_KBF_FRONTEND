@@ -1,107 +1,163 @@
-import { Employee, EmployeeFormData } from '@/types';
+import { Employee, EmployeeFormData, EmployeeUpdateDTO } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/config/apiClient';
 
-// --- Utility function to build FormData ---
-const buildEmployeeFormData = (formData: EmployeeFormData): FormData => {
-    const form = new FormData();
-    form.append(
-      'employee',
-      JSON.stringify({
-          username: formData.username,
-          name: formData.name,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          department: formData.department,
-          password: formData.password,
-          dateOfEmployment: formData.dateOfEmployment?.toISOString(),
-          status: formData.status,
-      })
-    );
+const buildEmployeeFormData = (formData: EmployeeFormData | EmployeeUpdateDTO): FormData => {
+  const form = new FormData();
 
-    if (formData.profilePicture instanceof File) {
-        form.append('profilePicture', formData.profilePicture);
-    }
+  const employeeData = {
+    username: formData.username,
+    name: formData.name,
+    email: formData.email,
+    phoneNumber: formData.phoneNumber,
+    department: formData.department,
+    ...('password' in formData && { password: formData.password }),
+    dateOfEmployment: formData.dateOfEmployment?.toISOString(),
+    ...('status' in formData && { status: formData.status }),
+  };
 
-    if (formData.document instanceof File) {
-        form.append('document', formData.document);
-    }
+  form.append('employee', JSON.stringify(employeeData));
 
-    return form;
+  if (formData.profilePictureFile instanceof File) {
+    form.append('profilePicture', formData.profilePictureFile);
+  }
+
+  if (formData.documentFile instanceof File) {
+    form.append('document', formData.documentFile);
+  }
+
+  return form;
 };
 
-// --- API functions ---
 export const getEmployees = async (): Promise<Employee[]> => {
-    const { data } = await apiClient.get('/employees');
-    return data;
+  const response = await apiClient.get('/employees');
+  return response.data;
 };
 
-export const getEmployeeById = async (id: string): Promise<Employee> => {
-    const { data } = await apiClient.get(`/employees/${id}`);
-    return data;
-};
-
-export const createEmployee = async (formData: EmployeeFormData): Promise<Employee> => {
-    const form = buildEmployeeFormData(formData);
-    const { data } = await apiClient.post('/employees', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-};
-
-export const updateEmployee = async (id: string, formData: EmployeeFormData): Promise<Employee> => {
-    const form = buildEmployeeFormData(formData);
-    const { data } = await apiClient.put(`/employees/${id}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-};
-
-export const deleteEmployee = async (id: string): Promise<void> => {
-    await apiClient.delete(`/employees/${id}`);
-};
-
-// --- React Query Hooks ---
-export const useEmployees = () =>
-  useQuery<Employee[], Error>({
-      queryKey: ['employees'],
-      queryFn: getEmployees,
+export const useEmployees = () => {
+  return useQuery<Employee[], Error>({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
   });
+};
 
-export const useEmployeeById = (id: string) =>
-  useQuery<Employee, Error>({
-      queryKey: ['employee', id],
-      queryFn: () => getEmployeeById(id),
-      enabled: !!id,
+export const useEmployeeById = (id?: number) => {
+  return useQuery<Employee, Error>({
+    queryKey: ['employee', id],
+    queryFn: async () => {
+      if (id === undefined) throw new Error('Employee ID is required');
+      const { data } = await apiClient.get(`/employees/${id}`);
+      return data;
+    },
+    enabled: !!id,
   });
+};
+
 
 export const useCreateEmployee = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Employee, Error, EmployeeFormData>({
-        mutationFn: createEmployee,
-        onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ['employees'] });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation<Employee, Error, EmployeeFormData>({
+    mutationFn: async (formData) => {
+      const form = buildEmployeeFormData(formData);
+      const { data } = await apiClient.post('/employees', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
 };
 
 export const useUpdateEmployee = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Employee, Error, { id: string; data: EmployeeFormData }>({
-        mutationFn: ({ id, data }) => updateEmployee(id, data),
-        onSuccess: (_, variables) => {
-            void queryClient.invalidateQueries({ queryKey: ['employees'] });
-            void queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation<Employee, Error, { id: number; data: EmployeeUpdateDTO }>({
+    mutationFn: async ({ id, data }) => {
+      const form = buildEmployeeFormData(data);
+      const { data: response } = await apiClient.put(`/employees/${id}`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response;
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      await queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
 };
 
 export const useDeleteEmployee = () => {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, string>({
-        mutationFn: deleteEmployee,
-        onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ['employees'] });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/employees/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+};
+
+export const useUpdateProfilePicture = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Employee, Error, { id: number; file: File }>({
+    mutationFn: async ({ id, file }) => {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+      const { data } = await apiClient.put(`/employees/${id}/profile-picture`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ['employee', data.id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useUpdateDocument = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Employee, Error, { id: number; file: File }>({
+    mutationFn: async ({ id, file }) => {
+      const formData = new FormData();
+      formData.append('document', file);
+      const { data } = await apiClient.put(`/employees/${id}/document`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ['employee', data.id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useDeleteProfilePicture = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/employees/${id}/profile-picture`);
+    },
+    onSuccess: async (_, id) => {
+      await queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useDeleteDocument = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      await apiClient.delete(`/employees/${id}/document`);
+    },
+    onSuccess: async (_, id) => {
+      await queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
 };

@@ -1,4 +1,3 @@
-// src/components/common/FileUpload.tsx
 import React, { ChangeEvent, useState } from 'react';
 import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -29,6 +28,32 @@ const FileUpload: React.FC<FileUploadProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (accept) {
+      const acceptedTypes = accept.split(',').map(type => type.trim());
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const fileType = file.type;
+
+      const isValidType = acceptedTypes.some(type => {
+        if (type.startsWith('.')) {
+          return `.${fileExtension}` === type;
+        }
+        return fileType.match(type.replace('*', '.*'));
+      });
+
+      if (!isValidType) {
+        showNotification(`Invalid file type. Accepted types: ${accept}`, 'error');
+        return;
+      }
+    }
+
+    // Validate file size
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      showNotification('File size exceeds 5MB limit', 'error');
+      return;
+    }
+
     setFileName(file.name);
     setIsUploading(true);
 
@@ -42,7 +67,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
       setFileName('');
     } finally {
       setIsUploading(false);
-      // Reset the input to allow uploading the same file again
       e.target.value = '';
     }
   };

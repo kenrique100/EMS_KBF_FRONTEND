@@ -1,102 +1,150 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container,
   Button,
+  Container,
   Box,
   CircularProgress,
-  Grid,
-  Card,
-  CardContent,
-  Divider,
-  Typography,
+  Typography
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PageHeader from '@/components/common/PageHeader';
-import { useEmployeeById } from '@/api/employees';
-import { useDeleteEmployee, useUpdateEmployee } from '@/api/employees';
-import { useNotification } from '@/contexts/NotificationContext';
-import EmployeeProfile from '@/components/employees/EmployeeProfile';
-import FileActions from '@/components/common/FileActions';
-import FileUpload from '@/components/common/FileUpload';
+
 import { useAuthStore } from '@/store/authStore';
-import { Employee, EmployeeFormData, FileUploadResponse } from '@/types';
+import { useNotification } from '@/contexts/NotificationContext';
+import {
+  useEmployeeById,
+  useDeleteEmployee,
+  useUpdateProfilePicture,
+  useDeleteProfilePicture,
+  useUpdateDocument,
+  useDeleteDocument
+} from '@/api/employees';
+import PageHeader from '@/components/common/PageHeader';
+import EmployeeProfile from '@/components/employees/EmployeeProfile';
+import { useProfile } from '@/api/profile';
 
-const EmployeeDetailsPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const { isAdmin } = useAuthStore();
-  const { showNotification } = useNotification();
+const EmployeeDetailPage = () => {
+  const { id: paramId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: employee, isLoading, refetch } = useEmployeeById(id!);
-  const { mutateAsync: deleteEmployee, isPending: isDeleting } = useDeleteEmployee();
-  const { mutateAsync: updateEmployee } = useUpdateEmployee();
+  const { getUserId, hasRole } = useAuthStore();
+  const { showNotification } = useNotification();
 
-  // Helper to convert Employee -> EmployeeFormData
-  const toEmployeeFormData = (employee: Employee): EmployeeFormData => ({
-    id: employee.id,
-    username: employee.username,
-    name: employee.name,
-    email: employee.email ?? '',
-    phoneNumber: employee.phoneNumber ?? '',
-    department: employee.department ?? '',
-    password: employee.password ?? '',
-    dateOfEmployment:
-      typeof employee.dateOfEmployment === 'string'
-        ? new Date(employee.dateOfEmployment)
-        : employee.dateOfEmployment,
-    status: employee.status,
-    profilePicture: employee.profilePicture ?? null,
-    document: employee.document ?? null,
-  });
+  const currentUserId = getUserId();
+
+  // Determine if we're showing profile view or another employee
+  const isProfileView = !paramId || paramId === 'me';
+
+  // Safely parse numeric ID
+  const parsedId = paramId && paramId !== 'me' ? parseInt(paramId, 10) : undefined;
+
+  // Final resolved ID for employee (profile or specific employee)
+  const employeeId = isProfileView ? currentUserId : parsedId;
+
+  // Use the correct hook based on view type
+  const {
+    data: employee,
+    isLoading,
+    error,
+    refetch,
+  } = isProfileView ? useProfile() : useEmployeeById(employeeId);
+
+  const { mutateAsync: deleteEmployee, isPending: isDeleting } = useDeleteEmployee();
+  const { mutateAsync: updateProfilePicture } = useUpdateProfilePicture();
+  const { mutateAsync: deleteProfilePicture } = useDeleteProfilePicture();
+  const { mutateAsync: updateDocument } = useUpdateDocument();
+  const { mutateAsync: deleteDocument } = useDeleteDocument();
+
+  const isAdmin = hasRole('ROLE_ADMIN');
+  const isCurrentUser = currentUserId !== undefined && employeeId !== undefined && currentUserId === employeeId;
 
   const handleDeleteEmployee = async () => {
+    if (employeeId === undefined) return;
+
     if (window.confirm('Are you sure you want to delete this employee?')) {
       try {
-        await deleteEmployee(id!);
+        await deleteEmployee(employeeId);
         showNotification('Employee deleted successfully', 'success');
         navigate('/employees');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete employee';
-        showNotification(errorMessage, 'error');
+      } catch (err) {
+        showNotification(
+          err instanceof Error ? err.message : 'Failed to delete employee',
+          'error'
+        );
       }
     }
   };
 
-  const handleDocumentUploadSuccess = async (response: FileUploadResponse) => {
+  const handleUploadProfilePicture = async (file: File) => {
+    if (employeeId === undefined) return;
     try {
-      const formData = {
-        ...toEmployeeFormData(employee!),
-        document: response.filename,
-      };
-      await updateEmployee({ id: id!, data: formData });
+      await updateProfilePicture({ id: employeeId, file });
+      await refetch();
+      showNotification('Profile picture updated successfully', 'success');
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to update profile picture',
+        'error'
+      );
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (employeeId === undefined) return;
+    try {
+      await deleteProfilePicture(employeeId);
+      await refetch();
+      showNotification('Profile picture removed successfully', 'success');
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to remove profile picture',
+        'error'
+      );
+    }
+  };
+
+  const handleUploadDocument = async (file: File) => {
+    if (employeeId === undefined) return;
+    try {
+      await updateDocument({ id: employeeId, file });
       await refetch();
       showNotification('Document uploaded successfully', 'success');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update document';
-      showNotification(errorMessage, 'error');
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to upload document',
+        'error'
+      );
     }
   };
 
-  const handleDocumentDeleteSuccess = async () => {
+  const handleDeleteDocument = async () => {
+    if (employeeId === undefined) return;
     try {
-      const formData = {
-        ...toEmployeeFormData(employee!),
-        document: null,
-      };
-      await updateEmployee({ id: id!, data: formData });
+      await deleteDocument(employeeId);
       await refetch();
-      showNotification('Document deleted successfully', 'success');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to remove document';
-      showNotification(errorMessage, 'error');
+      showNotification('Document removed successfully', 'success');
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : 'Failed to remove document',
+        'error'
+      );
     }
   };
 
-  if (isLoading || !employee) {
+  if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress size={60} />
+      <Box mt={8} display="flex" justifyContent="center">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !employee) {
+    return (
+      <Box mt={8} textAlign="center">
+        <Typography variant="h6" color="error">
+          {error?.message || 'Employee not found'}
+        </Typography>
       </Box>
     );
   }
@@ -104,83 +152,62 @@ const EmployeeDetailsPage = () => {
   return (
     <Container maxWidth="lg">
       <PageHeader
-        title="Employee Details"
+        title={isProfileView ? 'My Profile' : 'Employee Details'}
         breadcrumbs={[
-          { label: 'Employees', path: '/employees' },
-          { label: employee.name, path: '' },
+          isProfileView
+            ? { label: 'Dashboard', path: '/dashboard' }
+            : { label: 'Employees', path: '/employees' },
+          { label: employee.name, path: '' }
         ]}
         action={
           <Box display="flex" gap={2}>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate('/employees')}
-              variant="outlined"
-              sx={{ minWidth: 120 }}
-            >
-              Back
-            </Button>
-            {isAdmin && (
-              <>
-                <Button
-                  startIcon={<EditIcon />}
-                  onClick={() => navigate(`/employees/${id}/edit`)}
-                  variant="contained"
-                  color="primary"
-                  sx={{ minWidth: 120 }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  startIcon={<DeleteIcon />}
-                  onClick={handleDeleteEmployee}
-                  variant="contained"
-                  color="error"
-                  sx={{ minWidth: 120 }}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </Button>
-              </>
+            {!isProfileView && (
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={() => navigate('/employees')}
+                variant="outlined"
+              >
+                Back
+              </Button>
+            )}
+            {(isAdmin || isCurrentUser) && (
+              <Button
+                startIcon={<EditIcon />}
+                onClick={() =>
+                  navigate(isProfileView ? '/profile/edit' : `/employees/${employeeId}/edit`)
+                }
+                variant="contained"
+                color="primary"
+              >
+                Edit
+              </Button>
+            )}
+            {isAdmin && !isProfileView && employeeId !== undefined && (
+              <Button
+                startIcon={<DeleteIcon />}
+                onClick={handleDeleteEmployee}
+                variant="contained"
+                color="error"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
             )}
           </Box>
         }
       />
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <EmployeeProfile employee={employee} />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Documents
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              {employee.document ? (
-                <FileActions
-                  filename={employee.document as string}
-                  subDirectory="documents"
-                  onDeleteSuccess={handleDocumentDeleteSuccess}
-                  disabled={!isAdmin}
-                />
-              ) : isAdmin ? (
-                <FileUpload
-                  label="Upload Document"
-                  subDirectory="documents"
-                  accept=".pdf,.doc,.docx"
-                  onUploadSuccess={handleDocumentUploadSuccess}
-                />
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No documents uploaded
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+
+      <EmployeeProfile
+        employee={employee}
+        onUploadProfilePicture={employeeId ? handleUploadProfilePicture : undefined}
+        onDeleteProfilePicture={employeeId ? handleDeleteProfilePicture : undefined}
+        onUploadDocument={employeeId ? handleUploadDocument : undefined}
+        onDeleteDocument={employeeId ? handleDeleteDocument : undefined}
+        allowEdit={isAdmin || isCurrentUser}
+        isCurrentUser={isCurrentUser}
+      />
     </Container>
   );
 };
 
-export default EmployeeDetailsPage;
+export default EmployeeDetailPage;

@@ -1,4 +1,3 @@
-// src/components/employees/EmployeeList.tsx
 import {
   Table,
   TableBody,
@@ -15,9 +14,9 @@ import { Employee } from '@/types';
 
 interface EmployeeListProps {
   employees: Employee[];
-  onViewDetails: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onViewDetails: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({

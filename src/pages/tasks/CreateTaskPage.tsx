@@ -1,6 +1,5 @@
-// src/pages/tasks/CreateTaskPage.tsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateTask } from '@/api/tasks';
 import { getEmployees } from '@/api/employees';
 import TaskForm from '@/components/tasks/TaskForm';
@@ -9,8 +8,15 @@ import { Container, CircularProgress, Box } from '@mui/material';
 import { useNotification } from '@/contexts/NotificationContext';
 import { CreateTaskDTO } from '@/types';
 
+interface EmployeeOption {
+  id: number;
+  name: string;
+}
+
 const CreateTaskPage = () => {
-  const [employees, setEmployees] = useState<{ id: string; name: string }[]>([]);
+  const [searchParams] = useSearchParams();
+  const employeeIdParam = searchParams.get('employeeId');
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -20,14 +26,12 @@ const CreateTaskPage = () => {
     const fetchEmployees = async () => {
       try {
         const data = await getEmployees();
-        setEmployees(
-          data.map((employee) => ({
-            id: employee.id,
-            name: employee.name,
-          }))
-        );
+        setEmployees(data.map((e) => ({ id: e.id, name: e.name })));
       } catch (error) {
-        showNotification('Failed to load employees', 'error');
+        showNotification(
+          error instanceof Error ? error.message : 'Failed to load employees',
+          'error'
+        );
       } finally {
         setIsLoading(false);
       }
@@ -39,7 +43,11 @@ const CreateTaskPage = () => {
   const handleSubmit = (taskData: CreateTaskDTO) => {
     createTask(taskData, {
       onSuccess: () => {
+        showNotification('Task created successfully', 'success');
         navigate('/tasks');
+      },
+      onError: (error: Error) => {
+        showNotification(error.message || 'Failed to create task', 'error');
       },
     });
   };
@@ -66,6 +74,9 @@ const CreateTaskPage = () => {
         onSubmit={handleSubmit}
         isSubmitting={isPending}
         submitButtonText="Create Task"
+        initialData={{
+          employeeId: employeeIdParam ? Number(employeeIdParam) : 0,
+        }}
       />
     </Container>
   );

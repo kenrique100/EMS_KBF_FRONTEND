@@ -23,8 +23,10 @@ import { useAuthStore } from '@/store/authStore';
 
 const SalaryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: salary, isLoading: isSalaryLoading } = useSalaryById(id!);
-  const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(salary?.employeeId || '');
+  const paymentId = id ? parseInt(id, 10) : undefined;
+  const { data: salary, isLoading: isSalaryLoading } = useSalaryById(paymentId);
+  const employeeId = salary?.employeeId || 0;
+  const { data: employee, isLoading: isEmployeeLoading } = useEmployeeById(employeeId);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { mutate: deleteSalary } = useDeleteSalary();
   const navigate = useNavigate();
@@ -32,7 +34,9 @@ const SalaryDetailPage = () => {
   const { showNotification } = useNotification();
 
   const handleDelete = () => {
-    deleteSalary(id!, {
+    if (!paymentId) return;
+
+    deleteSalary(paymentId, {
       onSuccess: () => {
         showNotification('Salary payment deleted successfully', 'success');
         navigate('/salaries');
@@ -52,7 +56,7 @@ const SalaryDetailPage = () => {
     );
   }
 
-  if (!salary) {
+  if (!salary || !paymentId) {
     return (
       <Container maxWidth="sm">
         <Typography variant="h6" color="error" gutterBottom>
@@ -83,7 +87,9 @@ const SalaryDetailPage = () => {
         <Typography><strong>Amount:</strong> {formatCurrency(salary.amount)}</Typography>
         <Typography><strong>Date:</strong> {formatDate(salary.paymentDate)}</Typography>
         <Typography><strong>Status:</strong> {salary.status}</Typography>
-        <Typography><strong>Created At:</strong> {formatDate(salary.createdAt)}</Typography>
+        {salary.createdAt && (
+          <Typography><strong>Created At:</strong> {formatDate(salary.createdAt)}</Typography>
+        )}
       </Box>
 
       <Box sx={{ my: 3, p: 3, bgcolor: 'background.paper', borderRadius: 1 }}>

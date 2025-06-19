@@ -1,3 +1,4 @@
+import React from 'react';
 import {
     Table,
     TableBody,
@@ -11,7 +12,6 @@ import {
     Typography,
 } from '@mui/material';
 import { formatDate } from '@/utils/formatters';
-import React from 'react';
 import { Task, TaskStatus } from '@/types';
 
 interface TaskListProps {
@@ -54,7 +54,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                   </TableRow>
               </TableHead>
               <TableBody>
-                  {tasks.map(task => (
+                  {tasks.map((task) => (
                     <TableRow key={task.id}>
                         <TableCell>{task.title}</TableCell>
                         <TableCell>{task.employeeName || task.employeeId}</TableCell>
@@ -69,7 +69,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                         <TableCell align="right">
                             <Button
                               size="small"
-                              onClick={() => onViewDetails(task.id)}
+                              onClick={() => onViewDetails(String(task.id))}
                               sx={{ mr: 1 }}
                             >
                                 View
@@ -78,7 +78,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                               <Button
                                 size="small"
                                 color="secondary"
-                                onClick={() => onEdit(task.id)}
+                                onClick={() => onEdit(String(task.id))}
                                 sx={{ mr: 1 }}
                               >
                                   Edit
@@ -88,7 +88,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDel
                               <Button
                                 size="small"
                                 color="error"
-                                onClick={() => onDelete(task.id)}
+                                onClick={() => onDelete(String(task.id))}
                               >
                                   Delete
                               </Button>

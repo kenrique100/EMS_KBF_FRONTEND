@@ -1,4 +1,5 @@
-// src/types.ts
+// Employee & Auth Types
+
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 
@@ -7,69 +8,113 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: UserResponse;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface TokenRefreshResponse {
   accessToken: string;
   refreshToken: string;
   user: UserResponse;
 }
 
 export interface UserResponse {
-  id: string;
+  id: number;
   username: string;
   name: string;
   email: string;
-  role: Role[];
+  roles: Role[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface TokenRefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  user:UserResponse;
-}
+// Employee Core
+
+export type Department =
+  | 'FISHERY'
+  | 'POULTRY'
+  | 'RABBITRY'
+  | 'CONSTRUCTION'
+  | 'CROPS'
+  | 'LIVESTOCK'
+  | 'DAIRY'
+  | 'AGRO_FORESTRY'
+  | 'IRRIGATION'
+  | 'FARM_MANAGEMENT'
+  | 'AGRICULTURAL_ENGINEERING'
+  | 'FOOD_PROCESSING';
 
 export interface Employee {
-  id: string;
-  username: string;
-  name: string;
-  email?: string;
-  phoneNumber?: string;
-  department?: string;
-  password?: string;
-  dateOfEmployment: string | Date;
-  status: EmployeeStatus;
-  profilePicture?: string | File;
-  document?: string | File;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
-
-export interface EmployeeFormData {
-  id?: string;
+  id: number;
   username: string;
   name: string;
   email: string;
   phoneNumber: string;
-  department: string;
+  department: Department;
+  password?: string;
+  dateOfEmployment: string;
+  status: EmployeeStatus;
+  profilePicturePath?: string;
+  documentPath?: string;
+  salaryPayments?: SalaryPaymentDTO[];
+  tasks?: TaskDTO[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmployeeFormData {
+  id?: number;
+  username: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  department: Department;
   password: string;
   dateOfEmployment: Date | null;
   status: EmployeeStatus;
-  profilePicture?: string | File | null;
-  document?: string | File | null;
+  profilePicturePath?: string | null;
+  documentPath?: string | null;
+  profilePictureFile?: File | null;
+  documentFile?: File | null;
+}
+
+export interface EmployeeUpdateDTO {
+  id?: number;
+  username?: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  department?: Department;
+  password?: string;
+  dateOfEmployment?: Date | null;
+  status?: EmployeeStatus;
+  profilePictureFile?: File | null;
+  documentFile?: File | null;
+}
+
+export interface EmployeeProfileDTO {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  department: Department;
+  dateOfEmployment: string;
+  status: EmployeeStatus;
+  profilePicturePath?: string;
+  documentPath?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 
-export interface Salary {
-  id: string;
-  amount: number;
-  paymentDate: string;
-  employeeId: string;
-  employeeName?: string;
-  status: PaymentStatus;
-  paymentReference: string;
-  createdAt?: string;
-}
+// Salary Types
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -77,6 +122,54 @@ export enum PaymentStatus {
   FAILED = 'FAILED',
   CANCELLED = 'CANCELLED'
 }
+
+export interface Salary {
+  id: number;
+  amount: number;
+  paymentDate: string;
+  employeeId: number;
+  employeeName?: string;
+  status: PaymentStatus;
+  paymentReference: string;
+  createdAt?: string;
+}
+
+export interface SalaryPaymentDTO {
+  id: number;
+  amount: number;
+  paymentDate: string;
+  employeeId: number;
+  employeeName?: string;
+  status: PaymentStatus;
+  paymentReference?: string;
+  createdAt?: string;
+}
+
+export interface CreateSalaryPayload {
+  amount: number;
+  paymentDate: string;
+  employeeId: number;
+  paymentReference?: string;
+}
+
+export interface UpdateSalaryPayload {
+  id: number;
+  amount?: number;
+  paymentDate?: string;
+  employeeId?: number;
+  paymentReference?: string;
+}
+
+export interface SalaryFormData {
+  id: number;
+  amount: number;
+  paymentDate: Date | null;
+  employeeId: number;
+  paymentReference?: string;
+  status: PaymentStatus;
+}
+
+// Task Types
 
 export enum TaskStatus {
   PENDING = 'PENDING',
@@ -87,48 +180,54 @@ export enum TaskStatus {
 }
 
 export interface Task {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  deadline: string | Date;
-  employeeId: string;
+  deadline: Date | string;
+  employeeId: number;
   employeeName?: string;
   status: TaskStatus;
   expectedHours?: number;
   actualHours?: number;
-  startTime?: string | Date | null;
-  stopTime?: string | Date | null;
+  startTime?: Date | string | null;
+  stopTime?: Date | string | null;
+}
+
+export interface TaskDTO {
+  id: number;
+  title: string;
+  description: string;
+  deadline: Date | string;
+  employeeId: number;
+  employeeName?: string;
+  status: TaskStatus;
+  expectedHours?: number;
+  actualHours?: number;
+  startTime?: Date | string;
+  stopTime?: Date | string | null;
+  createdAt?: Date | string | null;
+  updatedAt?: Date | string | null;
 }
 
 export interface TaskActionDTO {
-  taskId: string;
+  taskId: number;
   action: 'START' | 'STOP' | 'COMPLETE';
 }
 
 export interface CreateTaskDTO {
   title: string;
   description: string;
-  deadline: Date;
-  employeeId: string;
+  deadline: Date | string;
+  employeeId: number;
   status?: TaskStatus;
   expectedHours?: number;
+  actualHours?: number;
+  startTime?: Date | string;
+  stopTime?: Date | string;
 }
 
-export interface CreateSalaryPayload {
-  amount: number;
-  paymentDate: string;
-  employeeId: string;
-  paymentReference: string;
-  status?: PaymentStatus;
-}
 
-export interface SalaryFormData {
-  id?: string;
-  amount: string | number;
-  paymentDate: Date | null;
-  employeeId: string;
-  paymentReference: string;
-}
+// Misc Types
 
 export interface ValidationErrors {
   [key: string]: string;
@@ -139,4 +238,5 @@ export interface FileUploadResponse {
   path: string;
   size: number;
   mimetype: string;
+  url: string;
 }

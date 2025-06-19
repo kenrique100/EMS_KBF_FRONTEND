@@ -1,6 +1,13 @@
 // src/contexts/NotificationContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    useEffect,
+} from 'react';
 import { AlertColor } from '@mui/material';
+import { registerNotification } from '@/store/notificationService';
 
 interface Notification {
     message: string;
@@ -19,10 +26,11 @@ const NotificationContext = createContext<NotificationContextType>({
     clearNotification: () => {},
 });
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
+                                                                                  children,
+                                                                              }) => {
     const [notification, setNotification] = useState<Notification | null>(null);
 
-    // Fixed: Used useCallback to memoize the function
     const showNotification = useCallback((message: string, severity: AlertColor) => {
         setNotification({ message, severity });
         setTimeout(() => setNotification(null), 5000);
@@ -32,8 +40,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setNotification(null);
     }, []);
 
+    // ✅ Register with the service once the context is ready
+    useEffect(() => {
+        registerNotification(showNotification);
+    }, [showNotification]);
+
     return (
-      <NotificationContext.Provider value={{ notification, showNotification, clearNotification }}>
+      <NotificationContext.Provider
+        value={{ notification, showNotification, clearNotification }}
+      >
           {children}
       </NotificationContext.Provider>
     );

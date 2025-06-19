@@ -1,8 +1,7 @@
-// src/api/auth.ts
 import apiClient from '@/config/apiClient';
-import { AuthResponse, LoginRequest, TokenRefreshResponse, UserResponse } from '@/types';
+import { LoginResponse, LoginRequest, UserResponse, TokenRefreshResponse } from '@/types';
 
-export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
+export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post('/auth/login', credentials);
     return response.data;
 };

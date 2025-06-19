@@ -1,12 +1,6 @@
-// src/store/authStore.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import {
-  login as apiLogin,
-  logout as apiLogout,
-  getCurrentUser,
-  refreshToken as apiRefreshToken,
-} from '@/api/auth';
+import { login as apiLogin, logout as apiLogout, getCurrentUser, refreshToken as apiRefreshToken } from '@/api/auth';
 import { Role, UserResponse } from '@/types';
 
 interface AuthState {
@@ -22,6 +16,7 @@ interface AuthState {
   hasRole: (role: Role) => boolean;
   setUser: (user: UserResponse | null) => void;
   clearAuth: () => void;
+  getUserId: () => number | undefined;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,12 +32,7 @@ export const useAuthStore = create<AuthState>()(
     clearAuth: () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      set({
-        user: null,
-        isAuthenticated: false,
-        error: null,
-        initialized: true,
-      });
+      set({ user: null, isAuthenticated: false, error: null, initialized: true });
     },
 
     login: async (username, password) => {
@@ -51,15 +41,11 @@ export const useAuthStore = create<AuthState>()(
         const { accessToken, refreshToken, user } = await apiLogin({ username, password });
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
-        set({
-          user,
-          isAuthenticated: true,
-          initialized: true,
-        });
+        set({ user, isAuthenticated: true, initialized: true });
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Login failed';
         set({ error: errorMessage });
-        throw new Error(errorMessage);
+        throw err;
       } finally {
         set({ isLoading: false });
       }
@@ -87,11 +73,7 @@ export const useAuthStore = create<AuthState>()(
       set({ isLoading: true });
       try {
         const user = await getCurrentUser();
-        set({
-          user,
-          isAuthenticated: true,
-          initialized: true,
-        });
+        set({ user, isAuthenticated: true, initialized: true });
       } catch (err) {
         if (await get().refreshToken()) {
           return;
@@ -107,17 +89,12 @@ export const useAuthStore = create<AuthState>()(
       if (!refreshToken) return false;
 
       try {
-        const { accessToken, refreshToken: newRefreshToken, user } =
-          await apiRefreshToken(refreshToken);
+        const { accessToken, refreshToken: newRefreshToken, user } = await apiRefreshToken(refreshToken);
         localStorage.setItem('accessToken', accessToken);
         if (newRefreshToken) {
           localStorage.setItem('refreshToken', newRefreshToken);
         }
-        set({
-          user,
-          isAuthenticated: true,
-          error: null,
-        });
+        set({ user, isAuthenticated: true, error: null });
         return true;
       } catch (err) {
         get().clearAuth();
@@ -128,8 +105,12 @@ export const useAuthStore = create<AuthState>()(
 
     hasRole: (role) => {
       const { user } = get();
-      if (!user || !user.role) return false;
-      return user.role.includes(role);
+      return !!user?.roles?.includes(role);
+    },
+
+    getUserId: () => {
+      const { user } = get();
+      return user?.id;
     },
   }))
 );

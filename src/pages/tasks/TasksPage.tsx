@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const TasksPage = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuthStore();
+  const hasAdminRole = useAuthStore((state) => state.hasRole('ROLE_ADMIN'));
   const { data: tasks, isLoading, isError } = useTasks();
 
   const handleViewDetails = (id: string) => {
@@ -39,7 +39,7 @@ const TasksPage = () => {
       <PageHeader
         title="Tasks"
         action={
-          isAdmin && (
+          hasAdminRole && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}
