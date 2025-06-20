@@ -1,42 +1,49 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '@/contexts/NotificationContext';
-import { useSalaryById, useUpdateSalary } from '@/api/salaries';
-import { useEmployees } from '@/api/employees';
 import SalaryForm from '@/components/salaries/SalaryForm';
 import PageHeader from '@/components/common/PageHeader';
 import { Container, CircularProgress, Box, Typography, Button } from '@mui/material';
-import { SalaryFormData, UpdateSalaryPayload } from '@/types';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { SalaryPaymentDTO } from '@/types';
+import { useSalaryById, useUpdateSalary } from '@/hooks/salaryHooks';
+import { useQuery } from '@tanstack/react-query';
+import { getEmployees } from '@/api/employees';
 
-const EditSalaryPage = () => {
+const SalaryEditPage = () => {
   const { id } = useParams<{ id: string }>();
   const paymentId = id ? parseInt(id, 10) : undefined;
-  const { data: salary, isLoading: isSalaryLoading } = useSalaryById(paymentId);
-  const { data: employees, isLoading: isEmployeesLoading } = useEmployees();
-  const { mutate: updateSalary, isPending: isSubmitting } = useUpdateSalary();
-  const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
-  const handleSubmit = async (formData: SalaryFormData) => {
-    if (!paymentId) return;
+  const { data: salary, isLoading: isSalaryLoading } = useSalaryById(paymentId);
+  const { data: employees, isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
+  });
+  const { mutate: updateSalary, isPending: isSubmitting } = useUpdateSalary();
 
-    const updateData: UpdateSalaryPayload = {
-      id: paymentId,
+  const handleSubmit = (formData: SalaryPaymentDTO) => {
+    if (!paymentId || !salary) return;
+
+    const updateData: SalaryPaymentDTO = {
       amount: formData.amount,
-      paymentDate: formData.paymentDate?.toISOString() || new Date().toISOString(),
+      paymentDate: formData.paymentDate,
       employeeId: formData.employeeId,
       paymentReference: formData.paymentReference || '',
     };
 
-    updateSalary(updateData, {
-      onSuccess: () => {
-        showNotification('Salary payment updated successfully', 'success');
-        navigate(`/salaries/${paymentId}`);
-      },
-      onError: (error: Error) => {
-        showNotification(error.message || 'Failed to update salary', 'error');
+    updateSalary(
+      { id: paymentId, ...updateData },
+      {
+        onSuccess: () => {
+          showNotification('Salary payment updated successfully', 'success');
+          navigate(`/salaries/${paymentId}`);
+        },
+        onError: (error: Error) => {
+          showNotification(error.message || 'Failed to update salary', 'error');
+        },
       }
-    });
+    );
   };
 
   if (isSalaryLoading || isEmployeesLoading) {
@@ -71,25 +78,23 @@ const EditSalaryPage = () => {
         breadcrumbs={[
           { label: 'Dashboard', path: '/dashboard' },
           { label: 'Salaries', path: '/salaries' },
-          { label: `Edit Salary #${paymentId}`, path: '' }
+          { label: `Edit Salary #${paymentId}`, path: '' },
         ]}
       />
       <SalaryForm
-        salary={{
+        initialValues={{
           id: salary.id,
           amount: salary.amount,
-          paymentDate: new Date(salary.paymentDate),
+          paymentDate: salary.paymentDate,
           employeeId: salary.employeeId,
           paymentReference: salary.paymentReference,
-          status: salary.status
         }}
-        employees={employees || []}
+        employees={employees?.map(e => ({ id: e.id, name: e.name })) || []}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-        submitButtonText="Update"
       />
     </Container>
   );
 };
 
-export default EditSalaryPage;
+export default SalaryEditPage;

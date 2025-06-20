@@ -1,100 +1,40 @@
-import { Employee, EmployeeFormData, EmployeeUpdateDTO } from '@/types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import apiClient from '@/config/apiClient';
+import apiClient from '../utils/apiClient';
+import { Employee, EmployeeDTO } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 
-const buildEmployeeFormData = (formData: EmployeeFormData | EmployeeUpdateDTO): FormData => {
-  const form = new FormData();
-
-  const employeeData = {
-    username: formData.username,
-    name: formData.name,
-    email: formData.email,
-    phoneNumber: formData.phoneNumber,
-    department: formData.department,
-    ...('password' in formData && { password: formData.password }),
-    dateOfEmployment: formData.dateOfEmployment?.toISOString(),
-    ...('status' in formData && { status: formData.status }),
-  };
-
-  form.append('employee', JSON.stringify(employeeData));
-
-  if (formData.profilePictureFile instanceof File) {
-    form.append('profilePicture', formData.profilePictureFile);
-  }
-
-  if (formData.documentFile instanceof File) {
-    form.append('document', formData.documentFile);
-  }
-
-  return form;
+export const useEmployees = () => {
+  return useQuery<Employee[]>({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 };
 
 export const getEmployees = async (): Promise<Employee[]> => {
-  const response = await apiClient.get('/employees');
+  const response = await apiClient.get('/api/employees');
   return response.data;
 };
 
-export const useEmployees = () => {
-  return useQuery<Employee[], Error>({
-    queryKey: ['employees'],
-    queryFn: getEmployees,
-  });
+export const getEmployeeById = async (id: number): Promise<Employee> => {
+  const response = await apiClient.get(`/api/employees/${id}`);
+  return response.data;
 };
 
-export const useEmployeeById = (id?: number) => {
-  return useQuery<Employee, Error>({
-    queryKey: ['employee', id],
-    queryFn: async () => {
-      if (id === undefined) throw new Error('Employee ID is required');
-      const { data } = await apiClient.get(`/employees/${id}`);
-      return data;
-    },
-    enabled: !!id,
-  });
+export const createEmployee = async (employee: EmployeeDTO): Promise<Employee> => {
+  const response = await apiClient.post('/api/employees', employee);
+  return response.data;
 };
 
-export const useCreateEmployee = () => {
-  const queryClient = useQueryClient();
-  return useMutation<Employee, Error, EmployeeFormData>({
-    mutationFn: async (formData) => {
-      const form = buildEmployeeFormData(formData);
-      const { data } = await apiClient.post('/employees', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
-    },
-  });
+export const updateEmployee = async (id: number, employee: EmployeeDTO): Promise<Employee> => {
+  const response = await apiClient.put(`/api/employees/${id}`, employee);
+  return response.data;
 };
 
-export const useUpdateEmployee = () => {
-  const queryClient = useQueryClient();
-  return useMutation<Employee, Error, { id: number; data: EmployeeUpdateDTO }>({
-    mutationFn: async ({ id, data }) => {
-      const form = buildEmployeeFormData(data);
-      const { data: response } = await apiClient.put(`/employees/${id}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response;
-    },
-    onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
-      await queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
-  });
+export const deleteEmployee = async (id: number): Promise<void> => {
+  await apiClient.delete(`/api/employees/${id}`);
 };
 
-export const useDeleteEmployee = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: async (id) => {
-      await apiClient.delete(`/employees/${id}`);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['employees'] });
-    },
-  });
+export const getEmployeeProfile = async (): Promise<Employee> => {
+  const response = await apiClient.get('/api/profile');
+  return response.data;
 };

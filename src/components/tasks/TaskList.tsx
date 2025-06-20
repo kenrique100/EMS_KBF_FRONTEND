@@ -12,7 +12,7 @@ import {
     Typography,
 } from '@mui/material';
 import { formatDate } from '@/utils/formatters';
-import { Task, TaskStatus } from '@/types';
+import type { Task, TaskStatus } from '@/types';   // 👈  type‑only import
 
 interface TaskListProps {
     tasks: Task[];
@@ -21,18 +21,32 @@ interface TaskListProps {
     onDelete?: (id: string) => void;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onViewDetails, onEdit, onDelete }) => {
-    const getStatusColor = (status: TaskStatus) => {
-        switch (status) {
-            case TaskStatus.COMPLETED: return 'success';
-            case TaskStatus.IN_PROGRESS: return 'primary';
-            case TaskStatus.PENDING: return 'default';
-            case TaskStatus.UNCOMPLETED: return 'warning';
-            case TaskStatus.CANCELLED: return 'error';
-            default: return 'default';
-        }
-    };
+/**
+ * Maps a `TaskStatus` string to the MUI Chip color we want to display.
+ */
+const getStatusColor = (status: TaskStatus) => {
+    switch (status) {
+        case 'COMPLETED':
+            return 'success';
+        case 'IN_PROGRESS':
+            return 'primary';
+        case 'PENDING':
+            return 'default';
+        case 'UNCOMPLETED':
+            return 'warning';
+        case 'CANCELLED':
+            return 'error';
+        default:
+            return 'default';
+    }
+};
 
+const TaskList: React.FC<TaskListProps> = ({
+                                               tasks,
+                                               onViewDetails,
+                                               onEdit,
+                                               onDelete,
+                                           }) => {
     if (tasks.length === 0) {
         return (
           <Typography variant="body1" align="center" sx={{ py: 4 }}>

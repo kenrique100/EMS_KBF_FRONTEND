@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useEmployees } from '@/api/employees';
 import { useTasks } from '@/api/tasks';
-import { useSalaries } from '@/api/salaries';
+import { useSalaries } from '@/hooks/useEmployee';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -44,7 +44,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, loading }) => (
 const DashboardPage: React.FC = () => {
   const { showNotification } = useNotification();
 
-  // Use individual queries for better error handling
+  // Use individual queries
   const {
     data: employees,
     isLoading: isEmployeesLoading,
@@ -63,7 +63,7 @@ const DashboardPage: React.FC = () => {
     error: salariesError,
   } = useSalaries();
 
-  // Show error notifications if any query fails
+  // Show error notifications
   useEffect(() => {
     if (employeesError) {
       showNotification('Failed to load employees data', 'error');

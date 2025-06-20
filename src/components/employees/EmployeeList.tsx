@@ -1,3 +1,5 @@
+// src/components/employees/EmployeeList.tsx
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -6,25 +8,30 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
+  Button
 } from '@mui/material';
-import { formatDate } from '@/utils/formatters';
-import React from 'react';
 import { Employee } from '@/types';
+import { formatDate } from '@/utils/formatters';
 
 interface EmployeeListProps {
   employees: Employee[];
+  loading?: boolean;
   onViewDetails: (id: number) => void;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
                                                      employees,
+                                                     loading = false,
                                                      onViewDetails,
                                                      onEdit,
                                                      onDelete
                                                    }) => {
+  if (loading) {
+    return <div>Loading employees...</div>;
+  }
+
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -43,7 +50,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <TableRow key={employee.id}>
               <TableCell>{employee.name}</TableCell>
               <TableCell>{employee.username}</TableCell>
-              <TableCell>{employee.department}</TableCell>
+              <TableCell>{employee.department.displayName}</TableCell>
               <TableCell>{formatDate(employee.dateOfEmployment)}</TableCell>
               <TableCell>{employee.status}</TableCell>
               <TableCell align="right">
@@ -54,21 +61,25 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                 >
                   View
                 </Button>
-                <Button
-                  size="small"
-                  color="secondary"
-                  onClick={() => onEdit(employee.id)}
-                  sx={{ mr: 1 }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => onDelete(employee.id)}
-                >
-                  Delete
-                </Button>
+                {onEdit && (
+                  <Button
+                    size="small"
+                    color="secondary"
+                    onClick={() => onEdit(employee.id)}
+                    sx={{ mr: 1 }}
+                  >
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => onDelete(employee.id)}
+                  >
+                    Delete
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}

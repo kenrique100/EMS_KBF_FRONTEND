@@ -1,384 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import {
-  TextField,
-  Button,
-  Box,
-  Grid,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  SelectChangeEvent,
-  Typography,
-  ButtonProps,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
-import FileUpload from '../common/FileUpload';
-import FileActions from '../common/FileActions';
-import { validateEmployee } from '@/utils/validators';
-import { EmployeeFormData, EmployeeStatus, Department } from '@/types';
-import { getFileUrl } from '@/api/files';
-
-const departmentOptions = [
-  { value: 'FISHERY', label: 'Fishery' },
-  { value: 'POULTRY', label: 'Poultry' },
-  { value: 'RABBITRY', label: 'Rabbitry' },
-  { value: 'CONSTRUCTION', label: 'Construction' },
-  { value: 'CROPS', label: 'Crops' },
-  { value: 'LIVESTOCK', label: 'Livestock' },
-  { value: 'DAIRY', label: 'Dairy' },
-  { value: 'AGRO_FORESTRY', label: 'Agro Forestry' },
-  { value: 'IRRIGATION', label: 'Irrigation' },
-  { value: 'FARM_MANAGEMENT', label: 'Farm Management' },
-  { value: 'AGRICULTURAL_ENGINEERING', label: 'Agricultural Engineering' },
-  { value: 'FOOD_PROCESSING', label: 'Food Processing' },
-];
+// src/components/employees/EmployeeForm.tsx
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Button, Grid, TextField, MenuItem, Box } from '@mui/material';
+import { EmployeeDTO, Department } from '@/types';
+import { employeeSchema } from '@/validations/employeeValidation';
 
 interface EmployeeFormProps {
-  employee?: EmployeeFormData;
-  onSubmit: (data: EmployeeFormData) => void;
+  initialValues?: EmployeeDTO;
+  onSubmit: (data: EmployeeDTO) => void;
   isSubmitting: boolean;
-  submitButtonText?: string;
-  submitButtonProps?: ButtonProps;
 }
 
+const departments: Department[] = [
+  { id: 1, name: 'FISHERY', displayName: 'Fishery' },
+  { id: 2, name: 'POULTRY', displayName: 'Poultry' },
+  { id: 3, name: 'RABBITRY', displayName: 'Rabbitry' },
+  { id: 4, name: 'CONSTRUCTION', displayName: 'Construction' },
+  { id: 5, name: 'CROPS', displayName: 'Crops' },
+  { id: 6, name: 'LIVESTOCK', displayName: 'Livestock' },
+  { id: 7, name: 'DAIRY', displayName: 'Dairy' },
+  { id: 8, name: 'FARM_MANAGEMENT', displayName: 'Farm Management' },
+];
+
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
-                                                     employee,
+                                                     initialValues,
                                                      onSubmit,
-                                                     isSubmitting,
-                                                     submitButtonText = 'Save',
-                                                     submitButtonProps = {},
+                                                     isSubmitting
                                                    }) => {
-  const [formData, setFormData] = useState<EmployeeFormData>({
-    username: '',
-    name: '',
-    email: '',
-    phoneNumber: '',
-    department: 'FARM_MANAGEMENT',
-    password: '',
-    dateOfEmployment: null,
-    status: 'ACTIVE',
-    profilePictureFile: null,
-    documentFile: null,
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<EmployeeDTO>({
+    resolver: yupResolver(employeeSchema),
+    defaultValues: initialValues,
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [fileError, setFileError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (employee) {
-      setFormData({
-        ...employee,
-        dateOfEmployment: employee.dateOfEmployment
-          ? new Date(employee.dateOfEmployment)
-          : null,
-        profilePictureFile: null,
-        documentFile: null,
-      });
-    }
-  }, [employee]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      const newErrors = { ...errors };
-      delete newErrors[name];
-      setErrors(newErrors);
-    }
-  };
-
-  const handleStatusChange = (e: SelectChangeEvent) => {
-    setFormData((prev) => ({ ...prev, status: e.target.value as EmployeeStatus }));
-  };
-
-  const handleDepartmentChange = (e: SelectChangeEvent) => {
-    setFormData((prev) => ({ ...prev, department: e.target.value as Department }));
-  };
-
-  const handleDateChange = (date: Date | null) => {
-    setFormData((prev) => ({ ...prev, dateOfEmployment: date }));
-    if (errors.dateOfEmployment) {
-      const newErrors = { ...errors };
-      delete newErrors.dateOfEmployment;
-      setErrors(newErrors);
-    }
-  };
-
-
-  const handleProfilePictureUpload = (file: File) => {
-    setFormData((prev) => ({
-      ...prev,
-      profilePictureFile: file,
-    }));
-  };
-
-  const handleDocumentUpload = (file: File) => {
-    setFormData((prev) => ({
-      ...prev,
-      documentFile: file,
-    }));
-  };
-
-  const handleProfilePictureDelete = () => {
-    setFormData((prev) => ({
-      ...prev,
-      profilePictureFile: null,
-    }));
-  };
-
-  const handleDocumentDelete = () => {
-    setFormData((prev) => ({
-      ...prev,
-      documentFile: null,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFileError(null);
-
-    const validationErrors = validateEmployee(formData, !employee);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    onSubmit({
-      ...formData,
-      dateOfEmployment: formData.dateOfEmployment || null,
-    });
-  };
-
-  const getProfilePictureUrl = () => {
-    if (formData.profilePicturePath) {
-      return getFileUrl(formData.profilePicturePath, 'profiles');
-    }
-    return undefined;
-  };
-
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      {fileError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {fileError}
-        </Alert>
-      )}
-
+    <form onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label="Username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
+            {...register('username')}
             error={!!errors.username}
-            helperText={errors.username}
-            margin="normal"
-            disabled={!!employee}
-            required
+            helperText={errors.username?.message}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label="Full Name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
+            {...register('name')}
             error={!!errors.name}
-            helperText={errors.name}
-            margin="normal"
-            required
+            helperText={errors.name?.message}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label="Email"
-            name="email"
             type="email"
-            value={formData.email}
-            onChange={handleChange}
+            {...register('email')}
             error={!!errors.email}
-            helperText={errors.email}
-            margin="normal"
-            required
+            helperText={errors.email?.message}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
             label="Phone Number"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
+            {...register('phoneNumber')}
             error={!!errors.phoneNumber}
-            helperText={errors.phoneNumber}
-            margin="normal"
+            helperText={errors.phoneNumber?.message}
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth margin="normal" error={!!errors.department}>
-            <InputLabel>Department</InputLabel>
-            <Select
-              value={formData.department}
-              label="Department"
-              onChange={handleDepartmentChange}
-              required
-            >
-              {departmentOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.department && (
-              <Typography variant="caption" color="error">
-                {errors.department}
-              </Typography>
-            )}
-          </FormControl>
+          <TextField
+            select
+            fullWidth
+            label="Department"
+            {...register('department')}
+            error={!!errors.department}
+            helperText={errors.department?.message}
+          >
+            {departments.map((dept) => (
+              <MenuItem key={dept.id} value={dept.name}>
+                {dept.displayName}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password}
-            margin="normal"
-            required={!employee}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <DatePicker
             label="Date of Employment"
-            value={formData.dateOfEmployment}
-            onChange={handleDateChange}
-            slotProps={{
-              textField: {
-                fullWidth: true,
-                margin: 'normal',
-                error: !!errors.dateOfEmployment,
-                helperText: errors.dateOfEmployment,
-                required: true,
-              },
-            }}
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            {...register('dateOfEmployment')}
+            error={!!errors.dateOfEmployment}
+            helperText={errors.dateOfEmployment?.message}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={formData.status}
-              label="Status"
-              onChange={handleStatusChange}
-              required
+        <Grid item xs={12}>
+          <Box display="flex" justifyContent="flex-end">
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSubmitting}
             >
-              <MenuItem value="ACTIVE">Active</MenuItem>
-              <MenuItem value="INACTIVE">Inactive</MenuItem>
-              <MenuItem value="ON_LEAVE">On Leave</MenuItem>
-              <MenuItem value="TERMINATED">Terminated</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Typography variant="subtitle1" gutterBottom>
-            Profile Picture
-          </Typography>
-          {formData.profilePictureFile ? (
-            <Box>
-              <Box mb={2}>
-                <img
-                  src={URL.createObjectURL(formData.profilePictureFile)}
-                  alt="Preview"
-                  style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
-                />
-              </Box>
-              <FileActions
-                fileUrl={URL.createObjectURL(formData.profilePictureFile)}
-                filename={formData.profilePictureFile.name}
-                onDelete={handleProfilePictureDelete}
-                disabled={isSubmitting}
-              />
-            </Box>
-          ) : formData.profilePicturePath ? (
-            <Box>
-              <Box mb={2}>
-                <img
-                  src={getProfilePictureUrl()}
-                  alt="Profile"
-                  style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
-                />
-              </Box>
-              <FileActions
-                fileUrl={getProfilePictureUrl() || ''}
-                filename={formData.profilePicturePath.split('/').pop() || 'profile'}
-                onDelete={handleProfilePictureDelete}
-                disabled={isSubmitting}
-              />
-            </Box>
-          ) : (
-            <FileUpload
-              label="Upload Profile Picture"
-              onFileSelected={handleProfilePictureUpload}
-              accept="image/*"
-              disabled={isSubmitting}
-            />
-          )}
-        </Grid>
-
-        <Grid item xs={12}>
-          <Typography variant="subtitle1" gutterBottom>
-            Document (CV, Certificates, etc.)
-          </Typography>
-          {formData.documentFile ? (
-            <FileActions
-              fileUrl={URL.createObjectURL(formData.documentFile)}
-              filename={formData.documentFile.name}
-              onDelete={handleDocumentDelete}
-              disabled={isSubmitting}
-            />
-          ) : formData.documentPath ? (
-            <FileActions
-              fileUrl={getFileUrl(formData.documentPath, 'documents')}
-              filename={formData.documentPath.split('/').pop() || 'document'}
-              onDelete={handleDocumentDelete}
-              disabled={isSubmitting}
-            />
-          ) : (
-            <FileUpload
-              label="Upload Document"
-              onFileSelected={handleDocumentUpload}
-              accept=".pdf,.doc,.docx"
-              disabled={isSubmitting}
-            />
-          )}
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-            {...submitButtonProps}
-            sx={{ mt: 2, ...submitButtonProps.sx }}
-          >
-            {isSubmitting ? 'Submitting...' : submitButtonText}
-          </Button>
+              {initialValues?.id ? 'Update Employee' : 'Create Employee'}
+            </Button>
+          </Box>
         </Grid>
       </Grid>
-    </Box>
+    </form>
   );
 };
 

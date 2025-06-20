@@ -1,177 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import {
-    TextField,
-    Button,
-    Box,
-    Grid,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-} from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers';
-import { CreateTaskDTO, TaskStatus } from '@/types';
-
-interface EmployeeOption {
-    id: number;
-    name: string;
-}
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Button, Grid, TextField, MenuItem, Box } from '@mui/material';
+import { TaskDTO } from '@/types';
+import { taskSchema } from '@/validations/taskValidation';
 
 interface TaskFormProps {
-    employees: EmployeeOption[];
-    onSubmit: (data: CreateTaskDTO) => void;
+    initialValues?: TaskDTO;
+    onSubmit: (data: TaskDTO) => void;
     isSubmitting: boolean;
-    submitButtonText?: string;
-    initialData?: Partial<CreateTaskDTO>;
+    employees: { id: number; name: string }[];
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
-                                               employees,
+                                               initialValues,
                                                onSubmit,
                                                isSubmitting,
-                                               submitButtonText = 'Save',
-                                               initialData
+                                               employees
                                            }) => {
-    const [formData, setFormData] = useState<CreateTaskDTO>({
-        title: '',
-        description: '',
-        deadline: new Date().toISOString(),
-        employeeId: 0,
-        status: TaskStatus.PENDING,
-        expectedHours: undefined,
-        actualHours: undefined,
-        startTime: undefined,
-        stopTime: undefined,
-        ...initialData
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm<TaskDTO>({
+        resolver: yupResolver(taskSchema),
+        defaultValues: initialValues,
     });
 
-    useEffect(() => {
-        if (initialData) {
-            setFormData(prev => ({
-                ...prev,
-                ...initialData
-            }));
-        }
-    }, [initialData]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'expectedHours' || name === 'actualHours'
-              ? (value ? Number(value) : undefined)
-              : value
-        }));
-    };
-
-    const handleSelectChange = (e: { target: { name?: string; value: unknown } }) => {
-        const { name, value } = e.target;
-        if (name) {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    };
-
-    const handleDateChange = (date: Date | null) => {
-        if (date) {
-            setFormData(prev => ({
-                ...prev,
-                deadline: date.toISOString()
-            }));
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSubmit(formData);
-    };
-
-    // Convert deadline string to Date object for the DateTimePicker
-    const deadlineDate = formData.deadline
-      ? new Date(formData.deadline)
-      : new Date();
-
     return (
-      <Box component="form" onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+          <Grid container spacing={3}>
               <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
+                    {...register('title')}
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
                   />
               </Grid>
               <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
                     multiline
                     rows={4}
+                    {...register('description')}
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
                   />
               </Grid>
               <Grid item xs={12} md={6}>
-                  <DateTimePicker
+                  <TextField
+                    select
+                    fullWidth
+                    label="Assigned Employee"
+                    {...register('employeeId', { valueAsNumber: true })}
+                    error={!!errors.employeeId}
+                    helperText={errors.employeeId?.message}
+                  >
+                      {employees.map((employee) => (
+                        <MenuItem key={employee.id} value={employee.id}>
+                            {employee.name}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
                     label="Deadline"
-                    value={deadlineDate}
-                    onChange={handleDateChange}
-                    minDateTime={new Date()}
-                    slotProps={{
-                        textField: {
-                            fullWidth: true,
-                            required: true
-                        }
-                    }}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    {...register('deadline')}
+                    error={!!errors.deadline}
+                    helperText={errors.deadline?.message}
                   />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                  <FormControl fullWidth required>
-                      <InputLabel>Employee</InputLabel>
-                      <Select
-                        name="employeeId"
-                        value={formData.employeeId}
-                        label="Employee"
-                        onChange={handleSelectChange}
-                      >
-                          {employees.map(employee => (
-                            <MenuItem key={employee.id} value={employee.id}>
-                                {employee.name}
-                            </MenuItem>
-                          ))}
-                      </Select>
-                  </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Expected Hours"
-                    name="expectedHours"
                     type="number"
-                    value={formData.expectedHours || ''}
-                    onChange={handleChange}
-                    inputProps={{ min: 0 }}
+                    {...register('expectedHours', { valueAsNumber: true })}
+                    error={!!errors.expectedHours}
+                    helperText={errors.expectedHours?.message}
                   />
               </Grid>
+              <Grid item xs={12}>
+                  <Box display="flex" justifyContent="flex-end">
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        disabled={isSubmitting}
+                      >
+                          {initialValues?.id ? 'Update Task' : 'Create Task'}
+                      </Button>
+                  </Box>
+              </Grid>
           </Grid>
-          <Box mt={3} display="flex" justifyContent="flex-end">
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={isSubmitting}
-                size="large"
-              >
-                  {isSubmitting ? 'Saving...' : submitButtonText}
-              </Button>
-          </Box>
-      </Box>
+      </form>
     );
 };
 

@@ -1,7 +1,22 @@
-// Employee & Auth Types
-
+// src/types/index.ts
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
+export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED' | 'PAID';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  roles: Role[];
+}
+
+export interface Department {
+  id: number;
+  name: string;
+  displayName: string;
+}
 
 export interface LoginRequest {
   username: string;
@@ -14,96 +29,13 @@ export interface LoginResponse {
   user: UserResponse;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
-export interface TokenRefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: UserResponse;
-}
-
-export interface UserResponse {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  roles: Role[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Employee Core
-
-export type Department =
-  | 'FISHERY'
-  | 'POULTRY'
-  | 'RABBITRY'
-  | 'CONSTRUCTION'
-  | 'CROPS'
-  | 'LIVESTOCK'
-  | 'DAIRY'
-  | 'AGRO_FORESTRY'
-  | 'IRRIGATION'
-  | 'FARM_MANAGEMENT'
-  | 'AGRICULTURAL_ENGINEERING'
-  | 'FOOD_PROCESSING';
 
 export interface Employee {
   id: number;
   username: string;
   name: string;
   email: string;
-  phoneNumber: string;
-  department: Department;
-  password?: string;
-  dateOfEmployment: string;
-  status: EmployeeStatus;
-  profilePicturePath?: string;
-  documentPath?: string;
-  salaryPayments?: SalaryPaymentDTO[];
-  tasks?: TaskDTO[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface EmployeeFormData {
-  id?: number;
-  username: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  department: Department;
-  password: string;
-  dateOfEmployment: Date | null;
-  status: EmployeeStatus;
-  profilePicturePath?: string | null;
-  documentPath?: string | null;
-  profilePictureFile?: File | null;
-  documentFile?: File | null;
-}
-
-export interface EmployeeUpdateDTO {
-  id?: number;
-  username?: string;
-  name?: string;
-  email?: string;
   phoneNumber?: string;
-  department?: Department;
-  password?: string;
-  dateOfEmployment?: Date | null;
-  status?: EmployeeStatus;
-  profilePictureFile?: File | null;
-  documentFile?: File | null;
-}
-
-export interface EmployeeProfileDTO {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
   department: Department;
   dateOfEmployment: string;
   status: EmployeeStatus;
@@ -113,170 +45,73 @@ export interface EmployeeProfileDTO {
   updatedAt: string;
 }
 
-export interface EmployeeBase {
+export interface EmployeeDTO {
   id?: number;
   username: string;
   name: string;
+  password: string;
   email: string;
   phoneNumber?: string;
-  department: Department;
-  dateOfEmployment: Date | string | null;
+  department: string;
+  dateOfEmployment: string;
   status?: EmployeeStatus;
-}
-
-export interface Employee extends EmployeeBase {
-  id: number;
-  profilePicturePath?: string;
-  documentPath?: string;
-  salaryPayments?: SalaryPaymentDTO[];
-  tasks?: TaskDTO[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface EmployeeFormData extends EmployeeBase {
-  password: string;
-  profilePictureFile?: File | null;
-  documentFile?: File | null;
-}
-
-export interface EmployeeUpdateDTO extends Partial<EmployeeBase> {
-  password?: string;
-  profilePictureFile?: File | null;
-  documentFile?: File | null;
-}
-
-export interface EmployeeProfileDTO extends Employee {
-  salaryPayments: SalaryPaymentDTO[];
-  tasks: TaskDTO[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-
-// Salary Types
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  PROCESSED = 'PROCESSED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
-}
-
-export interface Salary {
-  id: number;
-  amount: number;
-  paymentDate: string;
-  employeeId: number;
-  employeeName?: string;
-  status: PaymentStatus;
-  paymentReference: string;
-  createdAt?: string;
-}
-
-export interface SalaryPaymentDTO {
-  id: number;
-  amount: number;
-  paymentDate: string;
-  employeeId: number;
-  employeeName?: string;
-  status: PaymentStatus;
-  paymentReference?: string;
-  createdAt?: string;
-}
-
-export interface CreateSalaryPayload {
-  amount: number;
-  paymentDate: string;
-  employeeId: number;
-  paymentReference?: string;
-}
-
-export interface UpdateSalaryPayload {
-  id: number;
-  amount?: number;
-  paymentDate?: string;
-  employeeId?: number;
-  paymentReference?: string;
-}
-
-export interface SalaryFormData {
-  id: number;
-  amount: number;
-  paymentDate: Date | null;
-  employeeId: number;
-  paymentReference?: string;
-  status: PaymentStatus;
-}
-
-// Task Types
-
-export enum TaskStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  UNCOMPLETED = 'UNCOMPLETED',
-  CANCELLED = 'CANCELLED'
 }
 
 export interface Task {
   id: number;
   title: string;
-  description: string;
-  deadline: Date | string;
+  description?: string;
+  deadline: string;
   employeeId: number;
-  employeeName?: string;
+  employeeName: string;
   status: TaskStatus;
-  expectedHours?: number;
+  expectedHours: number;
   actualHours?: number;
-  startTime?: Date | string | null;
-  stopTime?: Date | string | null;
-}
-
-export interface TaskDTO {
-  id: number;
-  title: string;
-  description: string;
-  deadline: Date | string;
-  employeeId: number;
-  employeeName?: string;
-  status: TaskStatus;
-  expectedHours?: number;
-  actualHours?: number;
-  startTime?: Date | string;
-  stopTime?: Date | string | null;
-  createdAt?: Date | string | null;
-  updatedAt?: Date | string | null;
+  startTime?: string;
+  stopTime?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TaskActionDTO {
   taskId: number;
-  action: 'START' | 'STOP' | 'COMPLETE';
+  action: string;
 }
 
-export interface CreateTaskDTO {
+export interface TaskDTO {
+  id?: number;
   title: string;
-  description: string;
-  deadline: Date | string;
+  description?: string;
+  deadline: string;
   employeeId: number;
-  status?: TaskStatus;
-  expectedHours?: number;
-  actualHours?: number;
-  startTime?: Date | string;
-  stopTime?: Date | string;
+  expectedHours: number;
+}
+
+export interface SalaryPayment {
+  id: number;
+  amount: number;
+  paymentDate: string;
+  employeeId: number;
+  employeeName: string;
+  status: PaymentStatus;
+  paymentReference: string;
+  createdAt: string;
 }
 
 
-// Misc Types
-
-export interface ValidationErrors {
-  [key: string]: string;
+export interface SalaryPaymentDTO {
+  id?: number;
+  amount: number;
+  paymentDate: string;
+  employeeId: number;
+  paymentReference?: string;
+  createdAt?: string;
 }
 
-export interface FileUploadResponse {
-  filename: string;
+export interface ErrorResponse {
+  timestamp: string;
+  status: number;
+  error: string;
+  message: string;
   path: string;
-  size: number;
-  mimetype: string;
-  url: string;
 }

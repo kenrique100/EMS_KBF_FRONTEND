@@ -1,57 +1,66 @@
 // src/pages/tasks/TasksPage.tsx
-import { useNavigate } from 'react-router-dom';
-import { useTasks } from '@/api/tasks';
+import React, { useEffect, useState } from 'react';
+import { Button, Container } from '@mui/material';
 import TaskList from '@/components/tasks/TaskList';
 import PageHeader from '@/components/common/PageHeader';
-import { Container, Button, Box, CircularProgress, Typography } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import { useAuthStore } from '@/store/authStore';
+import { Task } from '@/types';
+import Loading from '@/components/common/Loading';
+import { useNavigate } from 'react-router-dom';
+import { getTasks } from '@/api/tasks';
 
-const TasksPage = () => {
+const TasksPage: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const hasAdminRole = useAuthStore((state) => state.hasRole('ROLE_ADMIN'));
-  const { data: tasks, isLoading, isError } = useTasks();
+  const { hasRole } = useAuthStore();
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const data = await getTasks();
+        setTasks(data);
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  const handleCreate = () => {
+    navigate('/tasks/create');
+  };
 
   const handleViewDetails = (id: string) => {
     navigate(`/tasks/${id}`);
   };
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" my={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container maxWidth="lg">
-        <Typography variant="h6" color="error">
-          Failed to load tasks
-        </Typography>
-      </Container>
-    );
+  if (loading) {
+    return <Loading />;
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="xl">
       <PageHeader
-        title="Tasks"
+        title="Task Management"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/' },
+          { label: 'Tasks', path: '/tasks' }
+        ]}
         action={
-          hasAdminRole && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/tasks/new')}
-            >
-              Add Task
+          hasRole('ROLE_ADMIN') && (
+            <Button variant="contained" color="primary" onClick={handleCreate}>
+              Create New Task
             </Button>
           )
         }
       />
+
       <TaskList
-        tasks={tasks || []}
+        tasks={tasks}
         onViewDetails={handleViewDetails}
       />
     </Container>

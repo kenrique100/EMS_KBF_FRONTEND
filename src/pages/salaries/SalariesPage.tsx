@@ -1,65 +1,75 @@
-import { useSalaries } from '@/api/salaries';
-import SalaryList from '@/components/salaries/SalaryList';
-import PageHeader from '@/components/common/PageHeader';
-import { Container, Button, Box, CircularProgress } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Button, Container } from '@mui/material';
+import SalaryList from '../../components/salaries/SalaryList';
+import PageHeader from '../../components/common/PageHeader';
 import { useAuthStore } from '@/store/authStore';
-import { Salary } from '@/types';
+import { SalaryPayment } from '@/types';
+import Loading from '../../components/common/Loading';
+import { useNavigate } from 'react-router-dom';
+import { getSalaryPayments, deleteSalaryPayment } from '@/api/salaries';
 
-const SalariesPage = () => {
-  const { data: salaries, isLoading } = useSalaries();
-  const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
+const SalariesPage: React.FC = () => {
+  const [salaries, setSalaries] = useState<SalaryPayment[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const hasAdminRole = useAuthStore(state => state.hasRole('ROLE_ADMIN'));
 
-  // Convert to required Salary type
-  const formattedSalaries: Salary[] = (salaries || []).map(s => ({
-    ...s,
-    paymentReference: s.paymentReference || ''
-  }));
-
-  const handleViewDetails = (id: number) => {
-    navigate(`/salaries/${id}`);
+  const fetchSalaries = async () => {
+    try {
+      const data = await getSalaryPayments();
+      setSalaries(data);
+    } catch (error) {
+      console.error('Failed to fetch salaries:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/salaries/${id}/edit`);
+  useEffect(() => {
+    fetchSalaries();
+  }, []);
+
+  const handleCreate = () => {
+    navigate('/salaries/create');
   };
 
-  const handleDelete = (id: number) => {
-    // Delete logic would be implemented here
-    console.log('Delete salary', id);
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this salary payment?')) {
+      try {
+        await deleteSalaryPayment(id);
+        await fetchSalaries(); // Refresh the list after deletion
+      } catch (error) {
+        console.error('Failed to delete salary payment:', error);
+      }
+    }
   };
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" my={4}>
-        <CircularProgress />
-      </Box>
-    );
+  if (loading) {
+    return <Loading />;
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="xl">
       <PageHeader
         title="Salary Payments"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/' },
+          { label: 'Salaries', path: '/salaries' }
+        ]}
         action={
           hasAdminRole && (
-            <Button
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/salaries/new')}
-              variant="contained"
-            >
-              Add Payment
+            <Button variant="contained" color="primary" onClick={handleCreate}>
+              Add New Payment
             </Button>
           )
         }
       />
+
       <SalaryList
-        salaries={formattedSalaries}
-        onViewDetails={handleViewDetails}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        salaries={salaries}
+        onViewDetails={(id) => navigate(`/salaries/${id}`)}
+        onEdit={hasAdminRole ? (id) => navigate(`/salaries/${id}/edit`) : undefined}
+        onDelete={hasAdminRole ? handleDelete : undefined}
       />
     </Container>
   );
