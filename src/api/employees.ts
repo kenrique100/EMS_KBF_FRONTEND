@@ -53,7 +53,6 @@ export const useEmployeeById = (id?: number) => {
   });
 };
 
-
 export const useCreateEmployee = () => {
   const queryClient = useQueryClient();
   return useMutation<Employee, Error, EmployeeFormData>({
@@ -96,68 +95,6 @@ export const useDeleteEmployee = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['employees'] });
-    },
-  });
-};
-
-export const useUpdateProfilePicture = () => {
-  const queryClient = useQueryClient();
-  return useMutation<Employee, Error, { id: number; file: File }>({
-    mutationFn: async ({ id, file }) => {
-      const formData = new FormData();
-      formData.append('profilePicture', file);
-      const { data } = await apiClient.put(`/employees/${id}/profile-picture`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data;
-    },
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ['employee', data.id] });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
-  });
-};
-
-export const useUpdateDocument = () => {
-  const queryClient = useQueryClient();
-  return useMutation<Employee, Error, { id: number; file: File }>({
-    mutationFn: async ({ id, file }) => {
-      const formData = new FormData();
-      formData.append('document', file);
-      const { data } = await apiClient.put(`/employees/${id}/document`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data;
-    },
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ['employee', data.id] });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
-  });
-};
-
-export const useDeleteProfilePicture = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: async (id) => {
-      await apiClient.delete(`/employees/${id}/profile-picture`);
-    },
-    onSuccess: async (_, id) => {
-      await queryClient.invalidateQueries({ queryKey: ['employee', id] });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    },
-  });
-};
-
-export const useDeleteDocument = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: async (id) => {
-      await apiClient.delete(`/employees/${id}/document`);
-    },
-    onSuccess: async (_, id) => {
-      await queryClient.invalidateQueries({ queryKey: ['employee', id] });
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 };

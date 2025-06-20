@@ -113,6 +113,46 @@ export interface EmployeeProfileDTO {
   updatedAt: string;
 }
 
+export interface EmployeeBase {
+  id?: number;
+  username: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  department: Department;
+  dateOfEmployment: Date | string | null;
+  status?: EmployeeStatus;
+}
+
+export interface Employee extends EmployeeBase {
+  id: number;
+  profilePicturePath?: string;
+  documentPath?: string;
+  salaryPayments?: SalaryPaymentDTO[];
+  tasks?: TaskDTO[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmployeeFormData extends EmployeeBase {
+  password: string;
+  profilePictureFile?: File | null;
+  documentFile?: File | null;
+}
+
+export interface EmployeeUpdateDTO extends Partial<EmployeeBase> {
+  password?: string;
+  profilePictureFile?: File | null;
+  documentFile?: File | null;
+}
+
+export interface EmployeeProfileDTO extends Employee {
+  salaryPayments: SalaryPaymentDTO[];
+  tasks: TaskDTO[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 // Salary Types
 

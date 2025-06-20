@@ -15,14 +15,12 @@ import { useNotification } from '@/contexts/NotificationContext';
 import {
   useEmployeeById,
   useDeleteEmployee,
-  useUpdateProfilePicture,
-  useDeleteProfilePicture,
-  useUpdateDocument,
-  useDeleteDocument
+  useUpdateEmployee
 } from '@/api/employees';
 import PageHeader from '@/components/common/PageHeader';
 import EmployeeProfile from '@/components/employees/EmployeeProfile';
 import { useProfile } from '@/api/profile';
+import { EmployeeUpdateDTO } from '@/types';
 
 const EmployeeDetailPage = () => {
   const { id: paramId } = useParams<{ id: string }>();
@@ -31,17 +29,10 @@ const EmployeeDetailPage = () => {
   const { showNotification } = useNotification();
 
   const currentUserId = getUserId();
-
-  // Determine if we're showing profile view or another employee
   const isProfileView = !paramId || paramId === 'me';
-
-  // Safely parse numeric ID
   const parsedId = paramId && paramId !== 'me' ? parseInt(paramId, 10) : undefined;
-
-  // Final resolved ID for employee (profile or specific employee)
   const employeeId = isProfileView ? currentUserId : parsedId;
 
-  // Use the correct hook based on view type
   const {
     data: employee,
     isLoading,
@@ -50,10 +41,7 @@ const EmployeeDetailPage = () => {
   } = isProfileView ? useProfile() : useEmployeeById(employeeId);
 
   const { mutateAsync: deleteEmployee, isPending: isDeleting } = useDeleteEmployee();
-  const { mutateAsync: updateProfilePicture } = useUpdateProfilePicture();
-  const { mutateAsync: deleteProfilePicture } = useDeleteProfilePicture();
-  const { mutateAsync: updateDocument } = useUpdateDocument();
-  const { mutateAsync: deleteDocument } = useDeleteDocument();
+  const { mutateAsync: updateEmployee } = useUpdateEmployee();
 
   const isAdmin = hasRole('ROLE_ADMIN');
   const isCurrentUser = currentUserId !== undefined && employeeId !== undefined && currentUserId === employeeId;
@@ -75,57 +63,43 @@ const EmployeeDetailPage = () => {
     }
   };
 
-  const handleUploadProfilePicture = async (file: File) => {
-    if (employeeId === undefined) return;
+  const handleUploadFile = async (file: File, type: 'profile' | 'document') => {
+    if (!employee || employeeId === undefined) return;
+
     try {
-      await updateProfilePicture({ id: employeeId, file });
+      const updateData: EmployeeUpdateDTO = {
+        ...employee,
+        dateOfEmployment: employee.dateOfEmployment,
+        [type === 'profile' ? 'profilePictureFile' : 'documentFile']: file
+      };
+
+      await updateEmployee({ id: employeeId, data: updateData });
       await refetch();
-      showNotification('Profile picture updated successfully', 'success');
+      showNotification('File updated successfully', 'success');
     } catch (err) {
       showNotification(
-        err instanceof Error ? err.message : 'Failed to update profile picture',
+        err instanceof Error ? err.message : 'Failed to update file',
         'error'
       );
     }
   };
 
-  const handleDeleteProfilePicture = async () => {
-    if (employeeId === undefined) return;
-    try {
-      await deleteProfilePicture(employeeId);
-      await refetch();
-      showNotification('Profile picture removed successfully', 'success');
-    } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : 'Failed to remove profile picture',
-        'error'
-      );
-    }
-  };
+  const handleDeleteFile = async (type: 'profile' | 'document') => {
+    if (!employee || employeeId === undefined) return;
 
-  const handleUploadDocument = async (file: File) => {
-    if (employeeId === undefined) return;
     try {
-      await updateDocument({ id: employeeId, file });
-      await refetch();
-      showNotification('Document uploaded successfully', 'success');
-    } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : 'Failed to upload document',
-        'error'
-      );
-    }
-  };
+      const updateData: EmployeeUpdateDTO = {
+        ...employee,
+        dateOfEmployment: employee.dateOfEmployment,
+        [type === 'profile' ? 'profilePicturePath' : 'documentPath']: undefined
+      };
 
-  const handleDeleteDocument = async () => {
-    if (employeeId === undefined) return;
-    try {
-      await deleteDocument(employeeId);
+      await updateEmployee({ id: employeeId, data: updateData });
       await refetch();
-      showNotification('Document removed successfully', 'success');
+      showNotification('File removed successfully', 'success');
     } catch (err) {
       showNotification(
-        err instanceof Error ? err.message : 'Failed to remove document',
+        err instanceof Error ? err.message : 'Failed to remove file',
         'error'
       );
     }
@@ -199,10 +173,10 @@ const EmployeeDetailPage = () => {
 
       <EmployeeProfile
         employee={employee}
-        onUploadProfilePicture={employeeId ? handleUploadProfilePicture : undefined}
-        onDeleteProfilePicture={employeeId ? handleDeleteProfilePicture : undefined}
-        onUploadDocument={employeeId ? handleUploadDocument : undefined}
-        onDeleteDocument={employeeId ? handleDeleteDocument : undefined}
+        onUploadProfilePicture={(file) => handleUploadFile(file, 'profile')}
+        onDeleteProfilePicture={() => handleDeleteFile('profile')}
+        onUploadDocument={(file) => handleUploadFile(file, 'document')}
+        onDeleteDocument={() => handleDeleteFile('document')}
         allowEdit={isAdmin || isCurrentUser}
         isCurrentUser={isCurrentUser}
       />

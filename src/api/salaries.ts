@@ -4,22 +4,22 @@ import { SalaryPaymentDTO, UpdateSalaryPayload, CreateSalaryPayload } from '@/ty
 import apiClient from '@/config/apiClient';
 
 export const getSalaries = async (): Promise<SalaryPaymentDTO[]> => {
-  const response = await apiClient.get('/api/salaries');
+  const response = await apiClient.get('/salaries');
   return response.data;
 };
 
 export const getSalaryById = async (paymentId: number): Promise<SalaryPaymentDTO> => {
-  const response = await apiClient.get(`/api/salaries/${paymentId}`);
+  const response = await apiClient.get(`/salaries/${paymentId}`);
   return response.data;
 };
 
 export const getSalariesByEmployee = async (employeeId: number): Promise<SalaryPaymentDTO[]> => {
-  const response = await apiClient.get(`/api/salaries/employee/${employeeId}`);
+  const response = await apiClient.get(`/salaries/employee/${employeeId}`);
   return response.data;
 };
 
 export const createSalary = async (salaryData: CreateSalaryPayload): Promise<SalaryPaymentDTO> => {
-  const response = await apiClient.post('/api/salaries', {
+  const response = await apiClient.post('/salaries', {
     ...salaryData,
     status: 'PROCESSED'
   });
@@ -27,12 +27,12 @@ export const createSalary = async (salaryData: CreateSalaryPayload): Promise<Sal
 };
 
 export const updateSalary = async ({ id, ...salaryData }: UpdateSalaryPayload): Promise<SalaryPaymentDTO> => {
-  const response = await apiClient.patch(`/api/salaries/${id}`, salaryData);
+  const response = await apiClient.patch(`/salaries/${id}`, salaryData);
   return response.data;
 };
 
 export const deleteSalary = async (paymentId: number): Promise<void> => {
-  await apiClient.delete(`/api/salaries/${paymentId}`);
+  await apiClient.delete(`/salaries/${paymentId}`);
 };
 
 export const useSalaries = () =>

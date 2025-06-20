@@ -14,12 +14,6 @@ import {
     ListItem,
     ListItemText,
     ListItemIcon,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
 } from '@mui/material';
 import {
     PictureAsPdf as PdfIcon,
@@ -30,10 +24,10 @@ import {
     Email as EmailIcon,
     Delete as DeleteIcon,
     CloudUpload as CloudUploadIcon,
-    Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { formatDate } from '@/utils/formatters';
 import { Employee } from '@/types';
+import { getFileUrl } from '@/api/files';
 
 interface EmployeeProfileProps {
     employee: Employee;
@@ -56,18 +50,12 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({
                                                          }) => {
     const getProfilePictureUrl = () => {
         if (!employee.profilePicturePath) return null;
-        if (employee.profilePicturePath.startsWith('http')) {
-            return employee.profilePicturePath;
-        }
-        return `/api/employees/files/${employee.profilePicturePath}`;
+        return getFileUrl(employee.profilePicturePath, 'profiles');
     };
 
     const getDocumentUrl = () => {
         if (!employee.documentPath) return null;
-        if (employee.documentPath.startsWith('http')) {
-            return employee.documentPath;
-        }
-        return `/api/employees/files/${employee.documentPath}`;
+        return getFileUrl(employee.documentPath, 'documents');
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'document') => {
@@ -93,16 +81,8 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({
             case 'doc':
             case 'docx':
                 return <DocIcon color="primary" />;
-            case 'xls':
-            case 'xlsx':
-                return <DescriptionIcon color="success" />;
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-                return <DescriptionIcon color="secondary" />;
             default:
-                return <DescriptionIcon />;
+                return <DocIcon />;
         }
     };
 
@@ -121,7 +101,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({
                 href={documentUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                startIcon={<DescriptionIcon />}
+                startIcon={<DocIcon />}
               >
                   View
               </Button>
@@ -273,7 +253,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({
                           {canEdit && (
                             <Box mt={2}>
                                 <input
-                                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                                  accept=".pdf,.doc,.docx"
                                   style={{ display: 'none' }}
                                   id="document-upload"
                                   type="file"
@@ -292,106 +272,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({
                           )}
                       </Paper>
                   </Grid>
-
-                  {employee.salaryPayments && employee.salaryPayments.length > 0 && (
-                    <Grid item xs={12}>
-                        <Paper elevation={0} sx={{ p: 2 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Salary Payments
-                            </Typography>
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Amount</TableCell>
-                                            <TableCell>Payment Date</TableCell>
-                                            <TableCell>Status</TableCell>
-                                            <TableCell>Reference</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {employee.salaryPayments.map((payment) => (
-                                          <TableRow key={payment.id}>
-                                              <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                                              <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                                              <TableCell>
-                                                  <Chip
-                                                    label={payment.status}
-                                                    color={
-                                                        payment.status === 'PROCESSED'
-                                                          ? 'success'
-                                                          : payment.status === 'PENDING'
-                                                            ? 'warning'
-                                                            : 'error'
-                                                    }
-                                                  />
-                                              </TableCell>
-                                              <TableCell>{payment.paymentReference}</TableCell>
-                                          </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Paper>
-                    </Grid>
-                  )}
-
-                  {employee.tasks && employee.tasks.length > 0 && (
-                    <Grid item xs={12}>
-                        <Paper elevation={0} sx={{ p: 2 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Tasks
-                            </Typography>
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Title</TableCell>
-                                            <TableCell>Status</TableCell>
-                                            <TableCell>Deadline</TableCell>
-                                            <TableCell>Hours</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {employee.tasks.map((task) => (
-                                          <TableRow key={task.id}>
-                                              <TableCell>{task.title}</TableCell>
-                                              <TableCell>
-                                                  <Chip
-                                                    label={task.status}
-                                                    color={
-                                                        task.status === 'COMPLETED'
-                                                          ? 'success'
-                                                          : task.status === 'IN_PROGRESS'
-                                                            ? 'warning'
-                                                            : 'error'
-                                                    }
-                                                  />
-                                              </TableCell>
-                                              <TableCell>{formatDate(task.deadline)}</TableCell>
-                                              <TableCell>
-                                                  {task.expectedHours || 'N/A'} / {task.actualHours || 'N/A'}
-                                              </TableCell>
-                                          </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Paper>
-                    </Grid>
-                  )}
               </Grid>
-
-              {employee.createdAt && (
-                <Typography variant="body2" color="text.secondary" mt={2}>
-                    Created: {formatDate(employee.createdAt)}
-                </Typography>
-              )}
-              {employee.updatedAt && (
-                <Typography variant="body2" color="text.secondary">
-                    Last Updated: {formatDate(employee.updatedAt)}
-                </Typography>
-              )}
           </CardContent>
       </Card>
     );

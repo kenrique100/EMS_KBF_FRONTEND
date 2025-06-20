@@ -1,22 +1,18 @@
 import React, { ChangeEvent, useState } from 'react';
 import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { uploadFile } from '@/api/files';
 import { useNotification } from '@/contexts/NotificationContext';
-import { FileUploadResponse } from '@/types';
 
 interface FileUploadProps {
   label: string;
-  subDirectory: string;
-  onUploadSuccess: (response: FileUploadResponse) => void;
+  onFileSelected: (file: File) => void;
   accept?: string;
   disabled?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
                                                  label,
-                                                 subDirectory,
-                                                 onUploadSuccess,
+                                                 onFileSelected,
                                                  accept,
                                                  disabled = false,
                                                }) => {
@@ -24,7 +20,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [fileName, setFileName] = useState('');
   const { showNotification } = useNotification();
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -58,13 +54,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
     setIsUploading(true);
 
     try {
-      const response = await uploadFile(file, subDirectory);
-      onUploadSuccess(response);
-      showNotification('File uploaded successfully', 'success');
+      onFileSelected(file);
+      showNotification('File selected successfully', 'success');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'File upload failed';
+      const errorMessage = error instanceof Error ? error.message : 'File selection failed';
       showNotification(errorMessage, 'error');
-      setFileName('');
     } finally {
       setIsUploading(false);
       e.target.value = '';
@@ -76,12 +70,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <input
         accept={accept}
         style={{ display: 'none' }}
-        id={`file-upload-${subDirectory}`}
+        id={`file-upload-${label.replace(/\s+/g, '-')}`}
         type="file"
         onChange={handleFileChange}
         disabled={disabled || isUploading}
       />
-      <label htmlFor={`file-upload-${subDirectory}`}>
+      <label htmlFor={`file-upload-${label.replace(/\s+/g, '-')}`}>
         <Button
           variant="outlined"
           component="span"
@@ -93,7 +87,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       </label>
       {fileName && (
         <Typography variant="body2" sx={{ mt: 1 }}>
-          {isUploading ? 'Uploading...' : `Selected file: ${fileName}`}
+          {isUploading ? 'Processing...' : `Selected file: ${fileName}`}
         </Typography>
       )}
     </Box>

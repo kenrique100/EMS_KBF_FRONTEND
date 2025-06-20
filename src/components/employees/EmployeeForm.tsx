@@ -11,12 +11,14 @@ import {
   SelectChangeEvent,
   Typography,
   ButtonProps,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import FileUpload from '../common/FileUpload';
 import FileActions from '../common/FileActions';
 import { validateEmployee } from '@/utils/validators';
-import { EmployeeFormData, EmployeeStatus, Department, FileUploadResponse } from '@/types';
+import { EmployeeFormData, EmployeeStatus, Department } from '@/types';
 import { getFileUrl } from '@/api/files';
 
 const departmentOptions = [
@@ -58,21 +60,20 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     password: '',
     dateOfEmployment: null,
     status: 'ACTIVE',
-    profilePicturePath: null,
-    documentPath: null,
     profilePictureFile: null,
     documentFile: null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [fileError, setFileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (employee) {
       setFormData({
         ...employee,
-        dateOfEmployment: employee.dateOfEmployment ? new Date(employee.dateOfEmployment) : null,
-        profilePicturePath: employee.profilePicturePath ?? null,
-        documentPath: employee.documentPath ?? null,
+        dateOfEmployment: employee.dateOfEmployment
+          ? new Date(employee.dateOfEmployment)
+          : null,
         profilePictureFile: null,
         documentFile: null,
       });
@@ -82,46 +83,48 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      const newErrors = { ...errors };
+      delete newErrors[name];
+      setErrors(newErrors);
+    }
   };
 
   const handleStatusChange = (e: SelectChangeEvent) => {
-    setFormData((prev) => ({
-      ...prev,
-      status: e.target.value as EmployeeStatus,
-    }));
+    setFormData((prev) => ({ ...prev, status: e.target.value as EmployeeStatus }));
   };
 
   const handleDepartmentChange = (e: SelectChangeEvent) => {
-    setFormData((prev) => ({
-      ...prev,
-      department: e.target.value as Department,
-    }));
+    setFormData((prev) => ({ ...prev, department: e.target.value as Department }));
   };
 
   const handleDateChange = (date: Date | null) => {
     setFormData((prev) => ({ ...prev, dateOfEmployment: date }));
+    if (errors.dateOfEmployment) {
+      const newErrors = { ...errors };
+      delete newErrors.dateOfEmployment;
+      setErrors(newErrors);
+    }
   };
 
-  const handleProfilePictureUpload = (response: FileUploadResponse) => {
+
+  const handleProfilePictureUpload = (file: File) => {
     setFormData((prev) => ({
       ...prev,
-      profilePicturePath: response.filename,
-      profilePictureFile: null,
+      profilePictureFile: file,
     }));
   };
 
-  const handleDocumentUpload = (response: FileUploadResponse) => {
+  const handleDocumentUpload = (file: File) => {
     setFormData((prev) => ({
       ...prev,
-      documentPath: response.filename,
-      documentFile: null,
+      documentFile: file,
     }));
   };
 
   const handleProfilePictureDelete = () => {
     setFormData((prev) => ({
       ...prev,
-      profilePicturePath: null,
       profilePictureFile: null,
     }));
   };
@@ -129,9 +132,24 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const handleDocumentDelete = () => {
     setFormData((prev) => ({
       ...prev,
-      documentPath: null,
       documentFile: null,
     }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFileError(null);
+
+    const validationErrors = validateEmployee(formData, !employee);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    onSubmit({
+      ...formData,
+      dateOfEmployment: formData.dateOfEmployment || null,
+    });
   };
 
   const getProfilePictureUrl = () => {
@@ -141,20 +159,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     return undefined;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const validationErrors = validateEmployee(formData, !employee);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    onSubmit(formData);
-  };
-
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <Grid container spacing={2}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      {fileError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {fileError}
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
@@ -166,6 +179,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             helperText={errors.username}
             margin="normal"
             disabled={!!employee}
+            required
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -178,6 +192,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             error={!!errors.name}
             helperText={errors.name}
             margin="normal"
+            required
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -191,6 +206,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             error={!!errors.email}
             helperText={errors.email}
             margin="normal"
+            required
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -212,6 +228,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               value={formData.department}
               label="Department"
               onChange={handleDepartmentChange}
+              required
             >
               {departmentOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -251,6 +268,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 margin: 'normal',
                 error: !!errors.dateOfEmployment,
                 helperText: errors.dateOfEmployment,
+                required: true,
               },
             }}
           />
@@ -258,7 +276,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         <Grid item xs={12} md={6}>
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
-            <Select value={formData.status} label="Status" onChange={handleStatusChange}>
+            <Select
+              value={formData.status}
+              label="Status"
+              onChange={handleStatusChange}
+              required
+            >
               <MenuItem value="ACTIVE">Active</MenuItem>
               <MenuItem value="INACTIVE">Inactive</MenuItem>
               <MenuItem value="ON_LEAVE">On Leave</MenuItem>
@@ -271,28 +294,43 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           <Typography variant="subtitle1" gutterBottom>
             Profile Picture
           </Typography>
-          {formData.profilePicturePath ? (
+          {formData.profilePictureFile ? (
+            <Box>
+              <Box mb={2}>
+                <img
+                  src={URL.createObjectURL(formData.profilePictureFile)}
+                  alt="Preview"
+                  style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
+                />
+              </Box>
+              <FileActions
+                fileUrl={URL.createObjectURL(formData.profilePictureFile)}
+                filename={formData.profilePictureFile.name}
+                onDelete={handleProfilePictureDelete}
+                disabled={isSubmitting}
+              />
+            </Box>
+          ) : formData.profilePicturePath ? (
             <Box>
               <Box mb={2}>
                 <img
                   src={getProfilePictureUrl()}
                   alt="Profile"
-                  style={{ maxWidth: '200px', maxHeight: '200px' }}
+                  style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
                 />
               </Box>
               <FileActions
-                filename={formData.profilePicturePath}
-                subDirectory="profiles"
-                onDeleteSuccess={handleProfilePictureDelete}
+                fileUrl={getProfilePictureUrl() || ''}
+                filename={formData.profilePicturePath.split('/').pop() || 'profile'}
+                onDelete={handleProfilePictureDelete}
                 disabled={isSubmitting}
               />
             </Box>
           ) : (
             <FileUpload
               label="Upload Profile Picture"
-              subDirectory="profiles"
+              onFileSelected={handleProfilePictureUpload}
               accept="image/*"
-              onUploadSuccess={handleProfilePictureUpload}
               disabled={isSubmitting}
             />
           )}
@@ -300,37 +338,46 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
         <Grid item xs={12}>
           <Typography variant="subtitle1" gutterBottom>
-            Document
+            Document (CV, Certificates, etc.)
           </Typography>
-          {formData.documentPath ? (
+          {formData.documentFile ? (
             <FileActions
-              filename={formData.documentPath}
-              subDirectory="documents"
-              onDeleteSuccess={handleDocumentDelete}
+              fileUrl={URL.createObjectURL(formData.documentFile)}
+              filename={formData.documentFile.name}
+              onDelete={handleDocumentDelete}
+              disabled={isSubmitting}
+            />
+          ) : formData.documentPath ? (
+            <FileActions
+              fileUrl={getFileUrl(formData.documentPath, 'documents')}
+              filename={formData.documentPath.split('/').pop() || 'document'}
+              onDelete={handleDocumentDelete}
               disabled={isSubmitting}
             />
           ) : (
             <FileUpload
               label="Upload Document"
-              subDirectory="documents"
+              onFileSelected={handleDocumentUpload}
               accept=".pdf,.doc,.docx"
-              onUploadSuccess={handleDocumentUpload}
               disabled={isSubmitting}
             />
           )}
         </Grid>
+
+        <Grid item xs={12}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+            {...submitButtonProps}
+            sx={{ mt: 2, ...submitButtonProps.sx }}
+          >
+            {isSubmitting ? 'Submitting...' : submitButtonText}
+          </Button>
+        </Grid>
       </Grid>
-      <Box mt={3} display="flex" justifyContent="flex-end">
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={isSubmitting}
-          {...submitButtonProps}
-        >
-          {isSubmitting ? 'Saving...' : submitButtonText}
-        </Button>
-      </Box>
     </Box>
   );
 };

@@ -4,7 +4,6 @@ import PageHeader from '@/components/common/PageHeader';
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import { useCreateEmployee } from '@/api/employees';
 import { useNotification } from '@/contexts/NotificationContext';
-import { uploadFile } from '@/api/files';
 import { EmployeeFormData } from '@/types';
 
 const CreateEmployeePage = () => {
@@ -14,19 +13,7 @@ const CreateEmployeePage = () => {
 
   const handleSubmit = async (formData: EmployeeFormData) => {
     try {
-      const dataToSubmit: EmployeeFormData = { ...formData };
-
-      if (formData.documentFile instanceof File) {
-        const { filename } = await uploadFile(formData.documentFile, 'documents');
-        dataToSubmit.documentPath = filename;
-      }
-
-      if (formData.profilePictureFile instanceof File) {
-        const { filename } = await uploadFile(formData.profilePictureFile, 'profiles');
-        dataToSubmit.profilePicturePath = filename;
-      }
-
-      await createEmployee(dataToSubmit);
+      await createEmployee(formData);
       showNotification('Employee created successfully', 'success');
       navigate('/employees');
     } catch (error) {
