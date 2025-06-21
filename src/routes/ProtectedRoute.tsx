@@ -1,9 +1,9 @@
-// src/components/ProtectedRoute.tsx
+// src/routes/ProtectedRoute.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import LoadingScreen from '@/components/common/LoadingScreen';
-import React from 'react';
 import { Role } from '@/types';
+import React from 'react';
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
@@ -23,7 +23,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles = [] })
   }
 
   if (roles.length > 0 && !roles.some(role => user?.roles.includes(role))) {
-    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

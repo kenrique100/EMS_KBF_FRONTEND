@@ -18,14 +18,14 @@ import SalaryDetailPage from '@/pages/salaries/SalaryDetailPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import UnauthorizedPage from '@/pages/UnauthorizedPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
-import MainLayout from '@/layouts/MainLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useAuthStore } from '@/store/authStore';
 import LoadingScreen from '@/components/common/LoadingScreen';
 import ProtectedRoute from '@/routes/ProtectedRoute';
+import MainLayout from '@/layouts/MainLayout';
 
 const AppRoutes: React.FC = () => {
-  const { initialized } = useAuthStore();
+  const { initialized, isAuthenticated } = useAuthStore();
 
   if (!initialized) {
     return <LoadingScreen />;
@@ -34,8 +34,11 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<MainLayout><LoginPage /></MainLayout>} />
-      <Route path="/unauthorized" element={<MainLayout><UnauthorizedPage /></MainLayout>} />
+      <Route element={<MainLayout children={<Outlet />} />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/404" element={<NotFoundPage />} />
+      </Route>
 
       {/* Protected routes with dashboard layout */}
       <Route element={
@@ -101,8 +104,10 @@ const AppRoutes: React.FC = () => {
       </Route>
 
       {/* Fallback routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<MainLayout><NotFoundPage /></MainLayout>} />
+      <Route path="/" element={
+        <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
+      } />
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 };
