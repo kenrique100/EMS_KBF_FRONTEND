@@ -1,3 +1,4 @@
+// src/AppRoutes.tsx
 import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -20,116 +21,87 @@ import ProfilePage from '@/pages/profile/ProfilePage';
 import MainLayout from '@/layouts/MainLayout';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useAuthStore } from '@/store/authStore';
-import type { Role } from '@/types';
-
-interface ProtectedRouteProps {
-  children?: React.ReactNode;
-  roles?: Role[];
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles = [] }) => {
-  const { isAuthenticated, hasRole } = useAuthStore();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (roles.length > 0 && !roles.some((r) => hasRole(r))) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return children ? <>{children}</> : <Outlet />;
-};
+import LoadingScreen from '@/components/common/LoadingScreen';
+import ProtectedRoute from '@/routes/ProtectedRoute';
 
 const AppRoutes: React.FC = () => {
+  const { initialized } = useAuthStore();
+
+  if (!initialized) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<MainLayout><LoginPage /></MainLayout>} />
       <Route path="/unauthorized" element={<MainLayout><UnauthorizedPage /></MainLayout>} />
 
-      {/* Protected routes with DashboardLayout */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Outlet />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/" element={<DashboardPage />} />
+      {/* Protected routes with dashboard layout */}
+      <Route element={
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Outlet />
+          </DashboardLayout>
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-
-        {/* Tasks routes */}
-        <Route path="/tasks" element={<TasksPage />} />
-        <Route path="/tasks/:id" element={<TaskDetailPage />} />
-        <Route
-          path="/tasks/create"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <TaskCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tasks/:id/edit"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <TaskEditPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Employees routes */}
-        <Route
-          path="/employees"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <EmployeesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/employees/create"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <EmployeeCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-        <Route
-          path="/employees/:id/edit"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <EmployeeEditPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Salaries routes */}
         <Route path="/salaries" element={<SalariesPage />} />
         <Route path="/salaries/:id" element={<SalaryDetailPage />} />
-        <Route
-          path="/salaries/create"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <SalaryCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/salaries/:id/edit"
-          element={
-            <ProtectedRoute roles={['ROLE_ADMIN']}>
-              <SalaryEditPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/:id" element={<TaskDetailPage />} />
+        <Route path="/employees/:id" element={<EmployeeDetailPage />} />
       </Route>
 
-      {/* Catch-all route */}
+      {/* Admin-only routes with nested protection */}
+      <Route element={
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Outlet />
+          </DashboardLayout>
+        </ProtectedRoute>
+      }>
+        <Route path="/tasks/create" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <TaskCreatePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/tasks/:id/edit" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <TaskEditPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/employees" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <EmployeesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/employees/create" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <EmployeeCreatePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/employees/:id/edit" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <EmployeeEditPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/salaries/create" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <SalaryCreatePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/salaries/:id/edit" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <SalaryEditPage />
+          </ProtectedRoute>
+        } />
+      </Route>
+
+      {/* Fallback routes */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<MainLayout><NotFoundPage /></MainLayout>} />
     </Routes>
   );

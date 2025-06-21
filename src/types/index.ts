@@ -29,6 +29,11 @@ export interface LoginResponse {
   user: UserResponse;
 }
 
+export interface TokenRefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 
 export interface Employee {
   id: number;

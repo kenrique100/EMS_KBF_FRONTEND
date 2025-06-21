@@ -1,7 +1,6 @@
-// src/config/apiClient.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/store/notificationService';
+import { TokenRefreshResponse } from '@/types';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -22,8 +21,8 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -53,66 +52,55 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized
     if (error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/')) {
+      !originalRequest.url?.includes('/auth/') &&
+      !originalRequest.skipAuthRefresh) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await apiClient.post(
-            '/auth/refresh',
-            { refreshToken },
-            { skipAuthRefresh: true, skipErrorNotification: true }
-          );
+        if (!refreshToken) throw new Error('No refresh token available');
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
+        // Use pure axios to avoid interceptor loops
+        const refreshResponse = await axios.post<TokenRefreshResponse>(
+          `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
+          { refreshToken },
+          {
+            headers: { 'Content-Type': 'application/json' },
           }
+        );
 
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return apiClient(originalRequest);
+        const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+        localStorage.setItem('accessToken', accessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
         }
+
+        // Update authorization header
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error('Refresh token failed', refreshError);
         if (!originalRequest.skipErrorNotification) {
           notify('Session expired. Please login again.', 'error');
         }
-        await useAuthStore.getState().logout();
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         return Promise.reject(error);
       }
     }
 
-    // Handle 403 Forbidden
-    if (error.response?.status === 403) {
-      if (!originalRequest.skipErrorNotification) {
-        notify('You do not have permission to access this resource', 'error');
-      }
-      return Promise.reject(error);
+    if (!originalRequest.skipErrorNotification) {
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'An unexpected error occurred';
+      notify(errorMessage, 'error');
     }
-
-    if (originalRequest.skipErrorNotification) {
-      return Promise.reject(error);
-    }
-
-    const errorMessage = getErrorMessage(error);
-    notify(errorMessage, 'error');
 
     return Promise.reject(error);
   }
 );
-
-function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
-  if (error.response) {
-    if (error.response.status === 403) {
-      return 'You do not have permission to perform this action';
-    }
-    return error.response.data?.message ||
-      error.response.data?.error ||
-      'An unexpected error occurred';
-  }
-  return error.message || 'An unexpected error occurred';
-}
 
 export default apiClient;

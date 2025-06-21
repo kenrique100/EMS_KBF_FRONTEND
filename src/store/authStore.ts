@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { login as apiLogin, logout as apiLogout, getCurrentUser, refreshToken as apiRefreshToken } from '@/api/auth';
+import { apiLogin, apiLogout, getCurrentUser, apiRefreshToken } from '@/api/auth';
 import { Role, UserResponse } from '@/types';
+import axios from 'axios';
 
 interface AuthState {
   user: UserResponse | null;
@@ -27,27 +28,31 @@ export const useAuthStore = create<AuthState>()(
     error: null,
     initialized: false,
 
-    setUser: (user) => set({ user }),
-
-    clearAuth: () => {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      set({ user: null, isAuthenticated: false, error: null, initialized: true });
-    },
-
     login: async (username, password) => {
       set({ isLoading: true, error: null });
       try {
         const { accessToken, refreshToken, user } = await apiLogin({ username, password });
+
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
-        set({ user, isAuthenticated: true, initialized: true });
+        set({ user, isAuthenticated: true });
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Login failed';
+        let errorMessage = 'Login failed';
+
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 401) {
+            errorMessage = 'Invalid username or password';
+          } else {
+            errorMessage = err.response?.data?.message || err.message;
+          }
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+
         set({ error: errorMessage });
-        throw err;
+        throw new Error(errorMessage);
       } finally {
-        set({ isLoading: false });
+        set({ isLoading: false, initialized: true });
       }
     },
 
@@ -59,13 +64,13 @@ export const useAuthStore = create<AuthState>()(
         console.error('Logout error:', err);
       } finally {
         get().clearAuth();
-        set({ initialized: true, isLoading: false });
+        set({ isLoading: false });
       }
     },
 
     initializeAuth: async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
         set({ initialized: true });
         return;
       }
@@ -73,14 +78,13 @@ export const useAuthStore = create<AuthState>()(
       set({ isLoading: true });
       try {
         const user = await getCurrentUser();
-        set({ user, isAuthenticated: true, initialized: true });
+        set({ user, isAuthenticated: true });
       } catch (err) {
-        if (await get().refreshToken()) {
-          return;
+        if (!(await get().refreshToken())) {
+          get().clearAuth();
         }
-        get().clearAuth();
       } finally {
-        set({ isLoading: false });
+        set({ initialized: true, isLoading: false });
       }
     },
 
@@ -89,11 +93,14 @@ export const useAuthStore = create<AuthState>()(
       if (!refreshToken) return false;
 
       try {
-        const { accessToken, refreshToken: newRefreshToken, user } = await apiRefreshToken(refreshToken);
+        const { accessToken, refreshToken: newRefreshToken } = await apiRefreshToken(refreshToken);
+
         localStorage.setItem('accessToken', accessToken);
         if (newRefreshToken) {
           localStorage.setItem('refreshToken', newRefreshToken);
         }
+
+        const user = await getCurrentUser();
         set({ user, isAuthenticated: true, error: null });
         return true;
       } catch (err) {
@@ -102,6 +109,14 @@ export const useAuthStore = create<AuthState>()(
         return false;
       }
     },
+
+    clearAuth: () => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      set({ user: null, isAuthenticated: false, error: null });
+    },
+
+    setUser: (user) => set({ user }),
 
     hasRole: (role) => {
       const { user } = get();

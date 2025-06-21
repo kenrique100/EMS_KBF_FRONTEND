@@ -1,4 +1,4 @@
-// src/components/auth/LoginForm.tsx
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -28,6 +28,7 @@ const schema = yup.object().shape({
 const LoginForm = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const [error, setError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(schema),
@@ -39,11 +40,16 @@ const LoginForm = () => {
       navigate('/dashboard');
     },
     onError: (error: Error) => {
-      console.error('Login error:', error);
+      setError(
+        error.message.includes('401')
+          ? 'Invalid username or password'
+          : 'Login failed. Please try again.'
+      );
     }
   });
 
   const onSubmit = (data: LoginFormData) => {
+    setError(null);
     mutation.mutate(data);
   };
 
@@ -61,9 +67,9 @@ const LoginForm = () => {
         },
       }}
     >
-      {mutation.isError && (
+      {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {mutation.error.message}
+          {error}
         </Alert>
       )}
 
