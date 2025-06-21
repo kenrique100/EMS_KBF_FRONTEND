@@ -102,6 +102,12 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         } />
       </Route>
+      {/* Added delete route */}
+      <Route path="/employees/:id/delete" element={
+        <ProtectedRoute roles={['ROLE_ADMIN']}>
+          <EmployeesPage />
+        </ProtectedRoute>
+      } />
 
       {/* Fallback routes */}
       <Route path="/" element={

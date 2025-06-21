@@ -2,20 +2,35 @@ import React from 'react';
 import { Box, Typography, Avatar, Card, CardContent, Grid, Divider, Link } from '@mui/material';
 import { Employee } from '@/types';
 import { formatDate } from '@/utils/formatters';
+import { getDepartmentDisplayName } from '@/utils/departmentUtils';
+import { getFileUrl } from '@/utils/fileUtils';
 
 interface EmployeeProfileProps {
     employee: Employee;
 }
 
 const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
+    const profileUrl = employee.profilePicturePath
+      ? getFileUrl(employee.profilePicturePath)
+      : null;
+
+    const documentUrl = employee.documentPath
+      ? getFileUrl(employee.documentPath, true)
+      : null;
+
     return (
       <Card>
           <CardContent>
               <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-                  {employee.profilePicturePath ? (
+                  {profileUrl ? (
                     <Avatar
-                      src={`${import.meta.env.VITE_API_BASE_URL}/api/files/${employee.profilePicturePath}`}
-                      sx={{ width: 120, height: 120, mb: 2 }}
+                      src={profileUrl}
+                      sx={{
+                          width: 120,
+                          height: 120,
+                          mb: 2,
+                          objectFit: 'cover'
+                      }}
                     />
                   ) : (
                     <Avatar sx={{ width: 120, height: 120, mb: 2 }}>
@@ -29,7 +44,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
                       {employee.username} • {employee.email}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                      {employee.department.displayName}
+                      {getDepartmentDisplayName(employee.department)}
                   </Typography>
               </Box>
 
@@ -65,7 +80,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
                   </Grid>
               </Grid>
 
-              {employee.documentPath && (
+              {documentUrl && (
                 <>
                     <Divider sx={{ my: 3 }} />
                     <Box>
@@ -73,7 +88,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
                             Documents
                         </Typography>
                         <Link
-                          href={`${import.meta.env.VITE_API_BASE_URL}/api/files/${employee.documentPath}`}
+                          href={documentUrl}
                           target="_blank"
                           download
                         >

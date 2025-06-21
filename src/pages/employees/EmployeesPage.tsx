@@ -1,62 +1,72 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button, Container } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import EmployeeList from '@/components/employees/EmployeeList';
 import PageHeader from '@/components/common/PageHeader';
-import { useAuthStore } from '@/store/authStore';
-import { Employee } from '@/types';
 import Loading from '@/components/common/Loading';
-import { useNavigate } from 'react-router-dom';
-import { deleteEmployee, getEmployees } from '@/api/employees';
+
+import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/store/notificationService';
 
+import { getEmployees, deleteEmployee } from '@/api/employees';
+import { Employee } from '@/types';
+
 const EmployeesPage: React.FC = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { hasRole } = useAuthStore();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (error) {
-        console.error('Failed to fetch employees:', error);
-        notify('Failed to load employees', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
+  /* ---------------------------------------------------------------------- */
+  /* QUERY: FETCH EMPLOYEES                                                 */
+  /* ---------------------------------------------------------------------- */
+  const {
+    data: employees = [],
+    isLoading,
+  } = useQuery<Employee[]>({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
+  });
 
-    fetchEmployees();
-  }, []);
-
-  const handleCreate = () => {
-    navigate('/employees/create');
-  };
-
-  const handleViewDetails = (id: number) => {
-    navigate(`/employees/${id}`);
-  };
-
-  const handleEdit = (id: number) => {
-    navigate(`/employees/${id}/edit`);
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteEmployee(id);
-      setEmployees(employees.filter(emp => emp.id !== id));
+  /* ---------------------------------------------------------------------- */
+  /* MUTATION: DELETE EMPLOYEE                                              */
+  /* ---------------------------------------------------------------------- */
+  const deleteMutation = useMutation({
+    mutationFn: deleteEmployee,
+    onSuccess: async () => {
+      // Invalidate all relevant queries to refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['employees'] }),
+        queryClient.invalidateQueries({ queryKey: ['employeeSalaries'] }),
+        queryClient.invalidateQueries({ queryKey: ['employeeTasks'] }),
+        queryClient.invalidateQueries({ queryKey: ['salaries'] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+      ]);
       notify('Employee deleted successfully', 'success');
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Failed to delete employee:', error);
       notify('Failed to delete employee', 'error');
+    },
+  });
+
+  /* ---------------------------------------------------------------------- */
+  /* HANDLERS                                                               */
+  /* ---------------------------------------------------------------------- */
+  const handleCreate = () => navigate('/employees/create');
+  const handleViewDetails = (id: number) => navigate(`/employees/${id}`);
+  const handleEdit = (id: number) => navigate(`/employees/${id}/edit`);
+  const handleDelete = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this employee and all associated files?')) {
+      deleteMutation.mutate(id);
     }
   };
 
-  if (loading) {
-    return <Loading />;
-  }
+  /* ---------------------------------------------------------------------- */
+  /* RENDER                                                                 */
+  /* ---------------------------------------------------------------------- */
+  if (isLoading) return <Loading />;
 
   return (
     <Container maxWidth="xl">
@@ -64,7 +74,7 @@ const EmployeesPage: React.FC = () => {
         title="Employee Management"
         breadcrumbs={[
           { label: 'Dashboard', path: '/' },
-          { label: 'Employees', path: '/employees' }
+          { label: 'Employees', path: '/employees' },
         ]}
         action={
           hasRole('ROLE_ADMIN') && (

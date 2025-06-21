@@ -1,50 +1,51 @@
 // src/validations/employeeValidation.ts
-import {
-    object,
-    string,
-    ObjectSchema,     // ✅ use ObjectSchema instead of SchemaOf
-} from 'yup';
+import * as yup from 'yup';
 import { EmployeeDTO } from '@/types';
 
 /**
- * Convenience type:
- *  - when creating a new employee we never send `id` or `status`
+ * Regex for basic phone number validation.
  */
-type EmployeeCreate = Omit<EmployeeDTO, 'id' | 'status'>;
-
-/** 📞 Shared phone‑number regex */
 const phoneRegex = /^\+?[0-9\s-]{10,}$/;
 
 /**
- * Validation schema for *creating* an employee.
- * `ObjectSchema<EmployeeCreate>` gives you full type‑safety in your form code.
+ * Yup validation schema for EmployeeDTO.
+ * Uses inline enum values instead of referencing EmployeeStatus.
  */
-export const employeeSchema: ObjectSchema<EmployeeCreate> = object({
-    username: string().required('Username is required'),
-    name: string().required('Full name is required'),
-    password: string()
+export const employeeSchema: yup.ObjectSchema<EmployeeDTO> = yup.object({
+    id: yup.number().optional(),
+
+    username: yup.string().required('Username is required'),
+
+    name: yup.string().required('Full name is required'),
+
+    password: yup
+      .string()
       .min(6, 'Password must be at least 6 characters')
       .required('Password is required'),
-    email: string().email('Invalid email').required('Email is required'),
-    phoneNumber: string()
-      .optional()
-      .matches(phoneRegex, 'Invalid phone number'),
-    department: string().required('Department is required'),
-    dateOfEmployment: string().required('Date of employment is required'),
-}).required();
 
-/**
- * Validation schema for *updating* an employee.
- * All fields are optional, so we wrap the EmployeeCreate type in Partial<>.
- */
-/*
-export const employeeUpdateSchema: ObjectSchema<Partial<EmployeeCreate>> = object({
-    username: string(),
-    name: string(),
-    password: string().min(6, 'Password must be at least 6 characters'),
-    email: string().email('Invalid email'),
-    phoneNumber: string().matches(phoneRegex, 'Invalid phone number'),
-    department: string(),
-    dateOfEmployment: date(),
-}).noUnknown();
-*/
+    email: yup
+      .string()
+      .email('Invalid email')
+      .required('Email is required'),
+
+    phoneNumber: yup
+      .string()
+      .matches(phoneRegex, 'Invalid phone number')
+      .optional(),
+
+    department: yup.string().required('Department is required'),
+
+    dateOfEmployment: yup
+      .string()
+      .required('Date of employment is required'),
+
+    // Instead of using EmployeeStatus (which is a type only),
+    // we directly specify the allowed values.
+    status: yup
+      .string()
+      .oneOf(['ACTIVE', 'INACTIVE', 'ON_LEAVE', 'TERMINATED'])
+      .optional(),
+
+    profilePicturePath: yup.string().optional(),
+    documentPath: yup.string().optional(),
+}).required();

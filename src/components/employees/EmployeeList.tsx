@@ -1,3 +1,4 @@
+// src/components/employees/EmployeeList.tsx
 import React from 'react';
 import {
   Table,
@@ -9,10 +10,12 @@ import {
   Paper,
   Button,
   CircularProgress,
-  Box
+  Box,
+  Chip
 } from '@mui/material';
 import { Employee } from '@/types';
 import { formatDate } from '@/utils/formatters';
+import { getDepartmentDisplayName } from '@/utils/departmentUtils';
 
 interface EmployeeListProps {
   employees: Employee[];
@@ -55,9 +58,20 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             <TableRow key={employee.id}>
               <TableCell>{employee.name}</TableCell>
               <TableCell>{employee.username}</TableCell>
-              <TableCell>{employee.department.displayName}</TableCell>
+              <TableCell>
+                {getDepartmentDisplayName(employee.department)}
+              </TableCell>
               <TableCell>{formatDate(employee.dateOfEmployment)}</TableCell>
-              <TableCell>{employee.status}</TableCell>
+              <TableCell>
+                <Chip
+                  label={employee.status}
+                  color={
+                    employee.status === 'ACTIVE' ? 'success' :
+                      employee.status === 'ON_LEAVE' ? 'warning' : 'error'
+                  }
+                  size="small"
+                />
+              </TableCell>
               <TableCell align="right">
                 <Button
                   size="small"

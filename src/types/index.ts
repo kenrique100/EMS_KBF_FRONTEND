@@ -12,11 +12,6 @@ export interface UserResponse {
   roles: Role[];
 }
 
-export interface Department {
-  id: number;
-  name: string;
-  displayName: string;
-}
 
 export interface LoginRequest {
   username: string;
@@ -41,7 +36,7 @@ export interface Employee {
   name: string;
   email: string;
   phoneNumber?: string;
-  department: Department;
+  department: string;
   dateOfEmployment: string;
   status: EmployeeStatus;
   profilePicturePath?: string;
@@ -60,6 +55,8 @@ export interface EmployeeDTO {
   department: string;
   dateOfEmployment: string;
   status?: EmployeeStatus;
+  profilePicturePath?: string;
+  documentPath?: string;
 }
 
 export interface Task {

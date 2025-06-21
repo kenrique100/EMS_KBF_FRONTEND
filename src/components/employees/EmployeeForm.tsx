@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Button, Grid, TextField, MenuItem, Box,
   FormControl, InputLabel, FormHelperText, Alert
 } from '@mui/material';
-import { EmployeeDTO, Department } from '@/types';
+import { EmployeeDTO } from '@/types';
 import { employeeSchema } from '@/validations/employeeValidation';
+import { departments } from '@/utils/departmentUtils';
+import { getFileUrl } from '@/utils/fileUtils';
 
-// File type constants matching backend
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -18,19 +19,6 @@ interface EmployeeFormProps {
   onSubmit: (data: EmployeeDTO, profilePicture?: File, document?: File) => void;
   isSubmitting: boolean;
 }
-
-const departments: Department[] = [
-  { id: 1, name: 'FISHERY', displayName: 'Fishery' },
-  { id: 2, name: 'POULTRY', displayName: 'Poultry' },
-  { id: 3, name: 'RABBITRY', displayName: 'Rabbitry' },
-  { id: 4, name: 'CONSTRUCTION', displayName: 'Construction' },
-  { id: 5, name: 'CROPS', displayName: 'Crops' },
-  { id: 6, name: 'LIVESTOCK', displayName: 'Livestock' },
-  { id: 7, name: 'DAIRY', displayName: 'Dairy' },
-  { id: 8, name: 'FARM_MANAGEMENT', displayName: 'Farm Management' },
-  { id: 9, name: 'AGRICULTURAL_ENGINEERING', displayName: 'Agricultural Engineering' },
-  { id: 10, name: 'FOOD_PROCESSING', displayName: 'Food Processing' },
-];
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
                                                      initialValues,
@@ -45,11 +33,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors }
   } = useForm<EmployeeDTO>({
     resolver: yupResolver(employeeSchema),
     defaultValues: initialValues,
   });
+
+  useEffect(() => {
+    if (initialValues) {
+      reset(initialValues);
+      if (initialValues.profilePicturePath) {
+        setProfilePreview(getFileUrl(initialValues.profilePicturePath));
+      }
+    }
+  }, [initialValues, reset]);
 
   const validateFile = (file: File, type: 'image' | 'document'): boolean => {
     if (file.size > MAX_FILE_SIZE) {
@@ -60,7 +58,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     const allowedTypes = type === 'image' ? ALLOWED_IMAGE_TYPES : ALLOWED_DOCUMENT_TYPES;
 
     if (!allowedTypes.includes(file.type)) {
-      // Fallback to check extension if type isn't recognized
       const extension = file.name.split('.').pop()?.toLowerCase();
       const extensionMap: Record<string, string> = {
         'jpg': 'image/jpeg',
@@ -79,11 +76,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         );
         return false;
       }
-    }
-
-    if (file.name.includes('..')) {
-      setFileError('Filename contains invalid characters');
-      return false;
     }
 
     setFileError(null);
@@ -110,8 +102,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   };
 
   const submitHandler = (data: EmployeeDTO) => {
-    if (fileError) return; // Don't submit if there's a file error
-
+    if (fileError) return;
     onSubmit(data, profilePicture || undefined, documentFile || undefined);
   };
 
@@ -175,7 +166,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             helperText={errors.department?.message}
           >
             {departments.map((dept) => (
-              <MenuItem key={dept.id} value={dept.name}>
+              <MenuItem key={dept.name} value={dept.name}>
                 {dept.displayName}
               </MenuItem>
             ))}

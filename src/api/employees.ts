@@ -1,14 +1,6 @@
+// src/api/employees.ts
 import apiClient from '../utils/apiClient';
 import { Employee, EmployeeDTO } from '@/types';
-import { useQuery } from '@tanstack/react-query';
-
-export const useEmployees = () => {
-  return useQuery<Employee[]>({
-    queryKey: ['employees'],
-    queryFn: getEmployees,
-    staleTime: 5 * 60 * 1000,
-  });
-};
 
 export const getEmployees = async (): Promise<Employee[]> => {
   const response = await apiClient.get('/employees');
@@ -26,13 +18,9 @@ export const createEmployee = async (
   document?: File
 ): Promise<Employee> => {
   const formData = new FormData();
-
-  // Append employee data as JSON
   formData.append('employee', new Blob([JSON.stringify(employee)], {
     type: 'application/json'
   }));
-
-  // Append files if they exist
   if (profilePicture) formData.append('profilePicture', profilePicture);
   if (document) formData.append('document', document);
 
@@ -41,7 +29,6 @@ export const createEmployee = async (
       'Content-Type': 'multipart/form-data'
     }
   });
-
   return response.data;
 };
 
@@ -52,13 +39,9 @@ export const updateEmployee = async (
   document?: File
 ): Promise<Employee> => {
   const formData = new FormData();
-
-  // Append employee data as JSON
   formData.append('employee', new Blob([JSON.stringify(employee)], {
     type: 'application/json'
   }));
-
-  // Append files if they exist
   if (profilePicture) formData.append('profilePicture', profilePicture);
   if (document) formData.append('document', document);
 
@@ -67,7 +50,6 @@ export const updateEmployee = async (
       'Content-Type': 'multipart/form-data'
     }
   });
-
   return response.data;
 };
 

@@ -1,32 +1,9 @@
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-export const getFileExtension = (filename: string): string => {
-  return filename.split('.').pop()?.toLowerCase() || '';
-};
-
-export const isImageFile = (filename: string): boolean => {
-  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-  const ext = getFileExtension(filename);
-  return imageExtensions.includes(ext);
-};
-
-export const isDocumentFile = (filename: string): boolean => {
-  const docExtensions = ['pdf', 'doc', 'docx'];
-  const ext = getFileExtension(filename);
-  return docExtensions.includes(ext);
-};
-
-export const downloadFile = (url: string, filename: string): void => {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+// src/utils/fileUtils.ts
+export const getFileUrl = (filePath: string, download = false): string => {
+  if (!filePath) return '';
+  const base = `${import.meta.env.VITE_API_BASE_URL}/api/employees/files`;
+  const encodedPath = encodeURIComponent(filePath);
+  return download
+    ? `${base}/${encodedPath}?type=download`
+    : `${base}/${encodedPath}`;
 };

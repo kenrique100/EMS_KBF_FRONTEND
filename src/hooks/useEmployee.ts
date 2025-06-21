@@ -49,8 +49,10 @@ export const toEmployeeDTO = (emp: Employee): EmployeeDTO => ({
   name: emp.name,
   email: emp.email,
   phoneNumber: emp.phoneNumber,
-  department: emp.department.name,
+  department: emp.department,
   dateOfEmployment: emp.dateOfEmployment,
   password: '',
   status: emp.status,
+  profilePicturePath: emp.profilePicturePath,
+  documentPath: emp.documentPath
 });
