@@ -1,4 +1,3 @@
-// src/pages/employees/EmployeeCreatePage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
@@ -6,19 +5,25 @@ import EmployeeForm from '@/components/employees/EmployeeForm';
 import { notify } from '@/store/notificationService';
 import PageHeader from '@/components/common/PageHeader';
 import { createEmployee } from '@/api/employees';
+import { EmployeeDTO } from '@/types';
 
 const EmployeeCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (
+    employeeData: EmployeeDTO,
+    profilePicture?: File,
+    document?: File
+  ) => {
     setIsSubmitting(true);
     try {
-      await createEmployee(data);
+      await createEmployee(employeeData, profilePicture, document);
       notify('Employee created successfully', 'success');
       navigate('/employees');
     } catch (error) {
-      notify('Failed to create employee', 'error');
+      console.error('Failed to create employee:', error);
+      notify('Failed to create employee. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }

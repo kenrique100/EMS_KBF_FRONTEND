@@ -1,4 +1,3 @@
-// src/components/employees/EmployeeList.tsx
 import React from 'react';
 import {
   Table,
@@ -8,7 +7,9 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button
+  Button,
+  CircularProgress,
+  Box
 } from '@mui/material';
 import { Employee } from '@/types';
 import { formatDate } from '@/utils/formatters';
@@ -29,7 +30,11 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                                                      onDelete
                                                    }) => {
   if (loading) {
-    return <div>Loading employees...</div>;
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (

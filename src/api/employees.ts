@@ -6,7 +6,7 @@ export const useEmployees = () => {
   return useQuery<Employee[]>({
     queryKey: ['employees'],
     queryFn: getEmployees,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -20,13 +20,54 @@ export const getEmployeeById = async (id: number): Promise<Employee> => {
   return response.data;
 };
 
-export const createEmployee = async (employee: EmployeeDTO): Promise<Employee> => {
-  const response = await apiClient.post('/employees', employee);
+export const createEmployee = async (
+  employee: EmployeeDTO,
+  profilePicture?: File,
+  document?: File
+): Promise<Employee> => {
+  const formData = new FormData();
+
+  // Append employee data as JSON
+  formData.append('employee', new Blob([JSON.stringify(employee)], {
+    type: 'application/json'
+  }));
+
+  // Append files if they exist
+  if (profilePicture) formData.append('profilePicture', profilePicture);
+  if (document) formData.append('document', document);
+
+  const response = await apiClient.post('/employees', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+
   return response.data;
 };
 
-export const updateEmployee = async (id: number, employee: EmployeeDTO): Promise<Employee> => {
-  const response = await apiClient.put(`/employees/${id}`, employee);
+export const updateEmployee = async (
+  id: number,
+  employee: EmployeeDTO,
+  profilePicture?: File,
+  document?: File
+): Promise<Employee> => {
+  const formData = new FormData();
+
+  // Append employee data as JSON
+  formData.append('employee', new Blob([JSON.stringify(employee)], {
+    type: 'application/json'
+  }));
+
+  // Append files if they exist
+  if (profilePicture) formData.append('profilePicture', profilePicture);
+  if (document) formData.append('document', document);
+
+  const response = await apiClient.put(`/employees/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+
   return response.data;
 };
 

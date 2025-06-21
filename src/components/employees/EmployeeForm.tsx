@@ -1,14 +1,21 @@
-// src/components/employees/EmployeeForm.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Button, Grid, TextField, MenuItem, Box } from '@mui/material';
+import {
+  Button, Grid, TextField, MenuItem, Box,
+  FormControl, InputLabel, FormHelperText, Alert
+} from '@mui/material';
 import { EmployeeDTO, Department } from '@/types';
 import { employeeSchema } from '@/validations/employeeValidation';
 
+// File type constants matching backend
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 interface EmployeeFormProps {
   initialValues?: EmployeeDTO;
-  onSubmit: (data: EmployeeDTO) => void;
+  onSubmit: (data: EmployeeDTO, profilePicture?: File, document?: File) => void;
   isSubmitting: boolean;
 }
 
@@ -21,6 +28,8 @@ const departments: Department[] = [
   { id: 6, name: 'LIVESTOCK', displayName: 'Livestock' },
   { id: 7, name: 'DAIRY', displayName: 'Dairy' },
   { id: 8, name: 'FARM_MANAGEMENT', displayName: 'Farm Management' },
+  { id: 9, name: 'AGRICULTURAL_ENGINEERING', displayName: 'Agricultural Engineering' },
+  { id: 10, name: 'FOOD_PROCESSING', displayName: 'Food Processing' },
 ];
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
@@ -28,6 +37,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                                                      onSubmit,
                                                      isSubmitting
                                                    }) => {
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -37,8 +51,72 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     defaultValues: initialValues,
   });
 
+  const validateFile = (file: File, type: 'image' | 'document'): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError(`File size exceeds maximum limit of 5MB`);
+      return false;
+    }
+
+    const allowedTypes = type === 'image' ? ALLOWED_IMAGE_TYPES : ALLOWED_DOCUMENT_TYPES;
+
+    if (!allowedTypes.includes(file.type)) {
+      // Fallback to check extension if type isn't recognized
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      const extensionMap: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'pdf': 'application/pdf',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      };
+
+      if (!extension || !extensionMap[extension] || !allowedTypes.includes(extensionMap[extension])) {
+        setFileError(
+          `Invalid ${type} file type. Allowed: ${allowedTypes.join(', ')}`
+        );
+        return false;
+      }
+    }
+
+    if (file.name.includes('..')) {
+      setFileError('Filename contains invalid characters');
+      return false;
+    }
+
+    setFileError(null);
+    return true;
+  };
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (validateFile(file, 'image')) {
+        setProfilePicture(file);
+        setProfilePreview(URL.createObjectURL(file));
+      }
+    }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (validateFile(file, 'document')) {
+        setDocumentFile(file);
+      }
+    }
+  };
+
+  const submitHandler = (data: EmployeeDTO) => {
+    if (fileError) return; // Don't submit if there's a file error
+
+    onSubmit(data, profilePicture || undefined, documentFile || undefined);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(submitHandler)}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <TextField
@@ -114,13 +192,65 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             helperText={errors.dateOfEmployment?.message}
           />
         </Grid>
+
+        {/* Profile Picture Upload */}
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth error={!!fileError}>
+            <InputLabel shrink>Profile Picture</InputLabel>
+            <Box mt={2}>
+              <input
+                type="file"
+                accept="image/jpeg, image/jpg, image/png, image/gif, image/webp"
+                onChange={handleProfileChange}
+                style={{ display: 'block' }}
+              />
+              <FormHelperText>
+                Optional, max 5MB (JPG, PNG, GIF, WEBP)
+              </FormHelperText>
+            </Box>
+          </FormControl>
+          {profilePreview && (
+            <Box mt={2}>
+              <img
+                src={profilePreview}
+                alt="Profile Preview"
+                style={{ maxWidth: '100%', maxHeight: 200 }}
+              />
+            </Box>
+          )}
+        </Grid>
+
+        {/* Document Upload */}
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth error={!!fileError}>
+            <InputLabel shrink>Document</InputLabel>
+            <Box mt={2}>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleDocumentChange}
+                style={{ display: 'block' }}
+              />
+              <FormHelperText>
+                Optional, max 5MB (PDF, DOC, DOCX)
+              </FormHelperText>
+            </Box>
+          </FormControl>
+        </Grid>
+
+        {fileError && (
+          <Grid item xs={12}>
+            <Alert severity="error">{fileError}</Alert>
+          </Grid>
+        )}
+
         <Grid item xs={12}>
           <Box display="flex" justifyContent="flex-end">
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!fileError}
             >
               {initialValues?.id ? 'Update Employee' : 'Create Employee'}
             </Button>

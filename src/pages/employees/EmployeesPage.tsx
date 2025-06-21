@@ -1,4 +1,3 @@
-// src/pages/employees/EmployeesPage.tsx
 import React, { useEffect, useState } from 'react';
 import { Button, Container } from '@mui/material';
 import EmployeeList from '@/components/employees/EmployeeList';
@@ -8,6 +7,7 @@ import { Employee } from '@/types';
 import Loading from '@/components/common/Loading';
 import { useNavigate } from 'react-router-dom';
 import { deleteEmployee, getEmployees } from '@/api/employees';
+import { notify } from '@/store/notificationService';
 
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -22,12 +22,13 @@ const EmployeesPage: React.FC = () => {
         setEmployees(data);
       } catch (error) {
         console.error('Failed to fetch employees:', error);
+        notify('Failed to load employees', 'error');
       } finally {
         setLoading(false);
       }
     };
 
-    void fetchEmployees(); // ✅ Fix: prevent unhandled promise warning
+    fetchEmployees();
   }, []);
 
   const handleCreate = () => {
@@ -46,8 +47,10 @@ const EmployeesPage: React.FC = () => {
     try {
       await deleteEmployee(id);
       setEmployees(employees.filter(emp => emp.id !== id));
+      notify('Employee deleted successfully', 'success');
     } catch (error) {
       console.error('Failed to delete employee:', error);
+      notify('Failed to delete employee', 'error');
     }
   };
 

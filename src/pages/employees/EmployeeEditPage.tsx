@@ -1,35 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useEmployee, toEmployeeDTO } from '@/hooks/useEmployee';
-import PageHeader from '@/components/common/PageHeader';
-import Loading from '@/components/common/Loading';
 import EmployeeForm from '@/components/employees/EmployeeForm';
-import { EmployeeDTO } from '@/types';
-import { updateEmployee } from '@/api/employees';
 import { notify } from '@/store/notificationService';
+import PageHeader from '@/components/common/PageHeader';
+import { getEmployeeById, updateEmployee } from '@/api/employees';
+import { Employee, EmployeeDTO } from '@/types';
+import { toEmployeeDTO } from '@/hooks/useEmployee';
+import Loading from '@/components/common/Loading';
 
 const EmployeeEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { employee, loading } = useEmployee(id);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (data: EmployeeDTO) => {
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (!id) return;
+
+      try {
+        const data = await getEmployeeById(Number(id));
+        setEmployee(data);
+      } catch (error) {
+        notify('Failed to fetch employee details', 'error');
+        navigate('/employees');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployee();
+  }, [id, navigate]);
+
+  const handleSubmit = async (
+    employeeData: EmployeeDTO,
+    profilePicture?: File,
+    document?: File
+  ) => {
+    if (!id || !employee) return;
+
     setIsSubmitting(true);
     try {
-      if (!id) return;
-      await updateEmployee(Number(id), data);
+      await updateEmployee(Number(id), employeeData, profilePicture, document);
       notify('Employee updated successfully', 'success');
       navigate(`/employees/${id}`);
     } catch (error) {
-      notify('Failed to update employee', 'error');
+      console.error('Failed to update employee:', error);
+      notify('Failed to update employee. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) return <Loading />;
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (!employee) {
+    return <div>Employee not found</div>;
+  }
 
   return (
     <Container maxWidth="md">
@@ -38,17 +69,15 @@ const EmployeeEditPage: React.FC = () => {
         breadcrumbs={[
           { label: 'Dashboard', path: '/' },
           { label: 'Employees', path: '/employees' },
-          { label: employee?.name ?? 'Employee', path: `/employees/${id}` },
+          { label: employee.name, path: `/employees/${id}` },
           { label: 'Edit', path: `/employees/${id}/edit` }
         ]}
       />
-      {employee && (
-        <EmployeeForm
-          initialValues={toEmployeeDTO(employee)}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
-      )}
+      <EmployeeForm
+        initialValues={toEmployeeDTO(employee)}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+      />
     </Container>
   );
 };
