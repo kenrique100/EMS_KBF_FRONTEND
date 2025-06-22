@@ -1,15 +1,16 @@
+// src/hooks/useEmployees.ts
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEmployeeById } from '@/api/employees';
-import { Employee, EmployeeDTO, SalaryPayment } from '@/types';
+import { Employee, EmployeeDTO } from '@/types';
 import { notify } from '@/store/notificationService';
 import { useQuery } from '@tanstack/react-query';
-import { getSalaryPayments } from '@/api/salaries';
+import { getEmployees } from '@/api/employees';
 
-export const useSalaries = () => {
-  return useQuery<SalaryPayment[]>({
-    queryKey: ['salaries'],
-    queryFn: getSalaryPayments,
+export const useEmployees = () => {
+  return useQuery<Employee[]>({
+    queryKey: ['employees'],
+    queryFn: getEmployees,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

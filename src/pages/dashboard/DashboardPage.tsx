@@ -14,9 +14,9 @@ import {
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
 } from '@mui/icons-material';
-import { useEmployees } from '@/api/employees';
 import { useTasks } from '@/api/tasks';
-import { useSalaries } from '@/hooks/useEmployee';
+import { useEmployees } from '@/hooks/useEmployee';
+import { useSalaries } from '@/hooks/salaryHooks';
 
 interface StatCardProps {
   icon: React.ReactNode;

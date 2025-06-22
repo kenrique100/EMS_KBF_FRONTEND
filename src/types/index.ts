@@ -1,5 +1,5 @@
 // src/types/index.ts
-export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED' | 'PAID';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
@@ -57,6 +57,13 @@ export interface EmployeeDTO {
   status?: EmployeeStatus;
   profilePicturePath?: string;
   documentPath?: string;
+}
+
+export interface EmployeeStatusUpdateDTO {
+  status: EmployeeStatus;
+  leaveStartDate?: string; // LocalDate in string format (YYYY-MM-DD)
+  expectedReturnDate?: string; // LocalDate in string format (YYYY-MM-DD)
+  suspensionDuration?: string; // ISO-8601 duration string (e.g., "PT72H")
 }
 
 export interface Task {
