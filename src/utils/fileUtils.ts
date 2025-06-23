@@ -3,8 +3,8 @@ export const getFileUrl = (filePath: string | undefined, isDownload = false): st
   if (!filePath) return '';
   const encodedPath = encodeURIComponent(filePath);
   return isDownload
-    ? `/employees/files/${encodedPath}?type=download`
-    : `/employees/files/${encodedPath}`;
+    ? `/api/employees/files/${encodedPath}?type=download`
+    : `/api/employees/files/${encodedPath}`;
 };
 
 export const formatFileSize = (bytes: number): string => {

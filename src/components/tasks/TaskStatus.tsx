@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button, ButtonGroup, Typography, Box } from '@mui/material';
+import { Button, ButtonGroup, Typography, Box, useTheme } from '@mui/material';
+import { motion } from 'framer-motion';
 import { Task } from '@/types';
 
 interface TaskStatusProps {
@@ -8,11 +9,11 @@ interface TaskStatusProps {
   isSubmitting: boolean;
 }
 
-const TaskStatus: React.FC<TaskStatusProps> = ({
-                                                 task,
-                                                 onStatusChange,
-                                                 isSubmitting
-                                               }) => {
+const MotionBox = motion(Box);
+
+const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitting }) => {
+  const theme = useTheme();
+
   const getAvailableActions = () => {
     switch (task.status) {
       case 'PENDING':
@@ -27,29 +28,40 @@ const TaskStatus: React.FC<TaskStatusProps> = ({
   const availableActions = getAvailableActions();
 
   return (
-    <Box mb={3}>
-      <Typography variant="h6" gutterBottom>
-        Task Status: {task.status}
+    <MotionBox
+      mb={3}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 12 }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
+        Task Status: <span style={{ color: theme.palette.primary.main }}>{task.status}</span>
       </Typography>
       {availableActions.length > 0 && (
-        <ButtonGroup>
+        <ButtonGroup fullWidth orientation="horizontal" sx={{ mt: 2 }}>
           {availableActions.map((action) => (
-            <Button
+            <motion.div
               key={action}
-              variant="contained"
-              color={
-                action === 'COMPLETE' ? 'success' :
-                  action === 'STOP' ? 'warning' : 'primary'
-              }
-              onClick={() => onStatusChange(action)}
-              disabled={isSubmitting}
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
             >
-              {action}
-            </Button>
+              <Button
+                variant="contained"
+                color={
+                  action === 'COMPLETE' ? 'success' :
+                    action === 'STOP' ? 'warning' : 'primary'
+                }
+                onClick={() => onStatusChange(action)}
+                disabled={isSubmitting}
+                sx={{ mx: 0.5 }}
+              >
+                {action}
+              </Button>
+            </motion.div>
           ))}
         </ButtonGroup>
       )}
-    </Box>
+    </MotionBox>
   );
 };
 

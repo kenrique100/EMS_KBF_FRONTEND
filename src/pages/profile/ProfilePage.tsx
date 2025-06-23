@@ -1,16 +1,31 @@
+// src/pages/ProfilePage.tsx
 import React, { useEffect, useState } from 'react';
-import { Container, Tabs, Tab, Box, Typography } from '@mui/material';
-import EmployeeProfile from '@/components/employees/EmployeeProfile';
-import TaskList from '@/components/tasks/TaskList';
-import SalaryList from '@/components/salaries/SalaryList';
-import { useAuthStore } from '@/store/authStore';
+import {
+  Container,
+  Tabs,
+  Tab,
+  Box,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TableContainer,
+  Paper,
+  Chip
+} from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
 import Loading from '@/components/common/Loading';
-import { Employee, Task, SalaryPayment } from '@/types';
+import EmployeeProfile from '@/components/employees/EmployeeProfile';
 import { useNavigate } from 'react-router-dom';
-import { getSalaryPaymentsForEmployee } from '@/api/salaries';
-import { getTasksForEmployee } from '@/api/tasks';
 import { getEmployeeProfile } from '@/api/employees';
+import { getTasksForEmployee } from '@/api/tasks';
+import { getSalaryPaymentsForEmployee } from '@/api/salaries';
+import { Employee, Task, SalaryPayment } from '@/types';
+import { formatDate } from '@/utils/formatters';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import PaidIcon from '@mui/icons-material/Paid';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -18,76 +33,101 @@ const ProfilePage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [salaries, setSalaries] = useState<SalaryPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-
-        // Fetch employee profile
         const profileData = await getEmployeeProfile();
         setEmployee(profileData);
 
         if (profileData.id) {
-          // Fetch employee-specific tasks
-          const tasksData = await getTasksForEmployee(profileData.id);
-          setTasks(tasksData);
+          const [taskData, salaryData] = await Promise.all([
+            getTasksForEmployee(profileData.id),
+            getSalaryPaymentsForEmployee(profileData.id)
+          ]);
 
-          // Fetch employee-specific salaries
-          const salariesData = await getSalaryPaymentsForEmployee(profileData.id);
-          setSalaries(salariesData);
+          setTasks(taskData);
+          setSalaries(salaryData);
         }
-      } catch (error) {
-        console.error('Failed to fetch profile data:', error);
+      } catch (err) {
+        console.error('Error fetching profile info:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfileData();
+    fetchData();
   }, []);
 
-  const handleViewSalaryDetails = (id: number) => {
-    navigate(`/salaries/${id}`);
-  };
-
-  const handleViewTaskDetails = (id: string) => {
-    navigate(`/tasks/${id}`);
-  };
-
-  if (loading || !employee) {
-    return <Loading />;
-  }
+  if (loading || !employee) return <Loading />;
 
   return (
     <Container maxWidth="md">
       <PageHeader
         title="My Profile"
-        breadcrumbs={[
-          { label: 'Dashboard', path: '/' },
-          { label: 'Profile', path: '/profile' }
-        ]}
+        breadcrumbs={[{ label: 'Profile', path: '/profile' }]}
       />
 
       <EmployeeProfile employee={employee} />
 
-      <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mt: 3 }}>
-        <Tab label="My Tasks" />
-        <Tab label="My Salary History" />
+      <Tabs
+        value={activeTab}
+        onChange={(_, val) => setActiveTab(val)}
+        sx={{ mt: 3 }}
+        variant="fullWidth"
+      >
+        <Tab label="My Tasks" icon={<AssignmentIcon />} />
+        <Tab label="My Salary History" icon={<PaidIcon />} />
       </Tabs>
 
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
           <>
+            <Typography variant="h6" gutterBottom>
+              Assigned Tasks
+            </Typography>
             {tasks.length > 0 ? (
-              <TaskList
-                tasks={tasks}
-                onViewDetails={handleViewTaskDetails}
-              />
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Due Date</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {tasks.map(task => (
+                      <TableRow
+                        key={task.id}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                      >
+                        <TableCell>{task.title}</TableCell>
+                        <TableCell>{formatDate(task.deadline)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={task.status}
+                            size="small"
+                            color={
+                              task.status === 'COMPLETED'
+                                ? 'success'
+                                : task.status === 'IN_PROGRESS'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             ) : (
-              <Typography variant="body1" align="center" sx={{ py: 4 }}>
+              <Typography align="center" sx={{ py: 4 }}>
                 No tasks assigned to you
               </Typography>
             )}
@@ -95,11 +135,54 @@ const ProfilePage: React.FC = () => {
         )}
 
         {activeTab === 1 && (
-          <SalaryList
-            salaries={salaries}
-            onViewDetails={handleViewSalaryDetails}
-            isProfileView={true}
-          />
+          <>
+            <Typography variant="h6" gutterBottom>
+              Salary Payments
+            </Typography>
+            {salaries.length > 0 ? (
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Amount</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {salaries.map(salary => (
+                      <TableRow
+                        key={salary.id}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/salaries/${salary.id}`)}
+                      >
+                        <TableCell>{formatDate(salary.paymentDate)}</TableCell>
+                        <TableCell align="right">${salary.amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={salary.status}
+                            size="small"
+                            color={
+                              salary.status === 'PAID'
+                                ? 'success'
+                                : salary.status === 'PENDING'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Typography align="center" sx={{ py: 4 }}>
+                No salary records found
+              </Typography>
+            )}
+          </>
         )}
       </Box>
     </Container>

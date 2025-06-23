@@ -16,7 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 
 interface SalaryListProps {
   salaries: SalaryPayment[];
-  onViewDetails: (id: number) => void;
+  onViewDetails?: (id: number) => void;
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
   isProfileView?: boolean;
@@ -65,13 +65,15 @@ const SalaryList: React.FC<SalaryListProps> = ({
               {isAdmin && <TableCell>{formatDate(salary.createdAt)}</TableCell>}
               {(isAdmin || isProfileView) && (
                 <TableCell align="right">
-                  <Button
-                    size="small"
-                    onClick={() => onViewDetails(salary.id)}
-                    sx={{ mr: 1 }}
-                  >
-                    View
-                  </Button>
+                  {onViewDetails && (
+                    <Button
+                      size="small"
+                      onClick={() => onViewDetails(salary.id)}
+                      sx={{ mr: 1 }}
+                    >
+                      View
+                    </Button>
+                  )}
                   {isAdmin && onEdit && (
                     <Button
                       size="small"

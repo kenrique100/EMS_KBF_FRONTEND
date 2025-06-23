@@ -1,4 +1,3 @@
-// src/types/index.ts
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED' | 'PAID';
@@ -10,8 +9,15 @@ export interface UserResponse {
   name: string;
   email: string;
   roles: Role[];
+  profilePicturePath?: string;
+  department?: string;
+  dateOfEmployment?: string;
+  status?: EmployeeStatus;
+  createdAt?: string;
+  updatedAt?: string;
+  phoneNumber?: string;
+  documentPath?: string;
 }
-
 
 export interface LoginRequest {
   username: string;
@@ -65,9 +71,9 @@ export interface EmployeeDTO {
 
 export interface EmployeeStatusUpdateDTO {
   status: EmployeeStatus;
-  leaveStartDate?: string; // LocalDate in string format (YYYY-MM-DD)
-  expectedReturnDate?: string; // LocalDate in string format (YYYY-MM-DD)
-  suspensionDuration?: string; // ISO-8601 duration string (e.g., "PT72H")
+  leaveStartDate?: string;
+  expectedReturnDate?: string;
+  suspensionDuration?: string;
 }
 
 export interface EmployeeStatusHistoryDTO {
@@ -75,18 +81,20 @@ export interface EmployeeStatusHistoryDTO {
   status: EmployeeStatus;
   startTimestamp: string;
   endTimestamp?: string;
-  allocatedDuration?: string;  // ISO 8601 duration format (e.g., "PT72H")
-  actualDuration?: string;    // ISO 8601 duration format
-  expectedEndTimestamp?: string;
-}
-
-export interface EmployeeStatusHistoryDTO {
-  status: EmployeeStatus;
-  startTimestamp: string;
-  endTimestamp?: string;
   allocatedDuration?: string;
   actualDuration?: string;
   expectedEndTimestamp?: string;
+}
+
+export interface EmployeeProfileDTO extends Omit<Employee, 'statusHistory'> {
+  statusHistory: EmployeeStatusHistoryDTO[];
+  salaryPayments: SalaryPayment[];
+  tasks: Task[];
+  roles?: Role[];
+}
+
+export interface EmployeeUpdateDTO extends Omit<EmployeeDTO, 'password'> {
+  password?: string;
 }
 
 export interface Task {
@@ -129,7 +137,6 @@ export interface SalaryPayment {
   paymentReference: string;
   createdAt: string;
 }
-
 
 export interface SalaryPaymentDTO {
   id?: number;
