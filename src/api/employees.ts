@@ -1,6 +1,6 @@
 // src/api/employees.ts
-import apiClient from '../utils/apiClient';
-import { Employee, EmployeeDTO } from '@/types';
+import apiClient from '@/utils/apiClient';
+import { Employee, EmployeeDTO, EmployeeStatusHistoryDTO, EmployeeStatusUpdateDTO } from '@/types';
 
 export const getEmployees = async (): Promise<Employee[]> => {
   const response = await apiClient.get('/employees');
@@ -53,11 +53,24 @@ export const updateEmployee = async (
   return response.data;
 };
 
+export const updateEmployeeStatus = async (
+  id: number,
+  statusUpdate: EmployeeStatusUpdateDTO
+): Promise<Employee> => {
+  const response = await apiClient.put(`/employees/${id}/status`, statusUpdate);
+  return response.data;
+};
+
 export const deleteEmployee = async (id: number): Promise<void> => {
   await apiClient.delete(`/employees/${id}`);
 };
 
 export const getEmployeeProfile = async (): Promise<Employee> => {
   const response = await apiClient.get('/profile');
+  return response.data;
+};
+
+export const getEmployeeStatusHistory = async (id: number): Promise<EmployeeStatusHistoryDTO[]> => {
+  const response = await apiClient.get(`/employees/${id}/status-history`);
   return response.data;
 };

@@ -1,3 +1,4 @@
+// DepartmentUtils.ts
 export interface Department {
   name: string;
   displayName: string;
@@ -11,10 +12,15 @@ export const departments: Department[] = [
   { name: 'CONSTRUCTION', displayName: 'Construction' },
   { name: 'CROPS', displayName: 'Crops' },
   { name: 'LIVESTOCK', displayName: 'Livestock' },
-  { name: 'FARM_MANAGEMENT', displayName: 'Farm Management' }
+  { name: 'FARM_MANAGEMENT', displayName: 'Farm Management' },
 ];
 
 export const getDepartmentDisplayName = (deptName: string): string => {
   const dept = departments.find(d => d.name === deptName);
-  return dept ? dept.displayName : 'N/A';
+  return dept ? dept.displayName : deptName;
 };
+
+export const departmentOptions = departments.map(dept => ({
+  value: dept.name,
+  label: dept.displayName
+}));

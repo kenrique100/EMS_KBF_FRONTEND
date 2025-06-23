@@ -33,7 +33,13 @@ export const employeeSchema: yup.ObjectSchema<EmployeeDTO> = yup.object({
       .matches(phoneRegex, 'Invalid phone number')
       .optional(),
 
-    department: yup.string().required('Department is required'),
+    department: yup
+      .string()
+      .oneOf([
+          'ADMINISTRATION', 'FISHERY', 'POULTRY', 'RABBITRY',
+          'CONSTRUCTION', 'CROPS', 'LIVESTOCK', 'FARM_MANAGEMENT'
+      ])
+      .required('Department is required'),
 
     dateOfEmployment: yup
       .string()

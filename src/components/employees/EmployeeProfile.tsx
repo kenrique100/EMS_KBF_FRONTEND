@@ -1,9 +1,11 @@
+// src/components/employees/EmployeeProfile.tsx
 import React from 'react';
 import { Box, Typography, Avatar, Card, CardContent, Grid, Divider, Link } from '@mui/material';
 import { Employee } from '@/types';
 import { formatDate } from '@/utils/formatters';
 import { getDepartmentDisplayName } from '@/utils/departmentUtils';
 import { getFileUrl } from '@/utils/fileUtils';
+import EmployeeStatusHistory from '@/components/employees/EmployeeStatusHistory'; // Import the component
 
 interface EmployeeProfileProps {
     employee: Employee;
@@ -97,6 +99,13 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee }) => {
                     </Box>
                 </>
               )}
+
+              {/* Add Status History Section */}
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                  Status History
+              </Typography>
+              <EmployeeStatusHistory history={employee.statusHistory || []} />
           </CardContent>
       </Card>
     );

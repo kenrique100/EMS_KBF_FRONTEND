@@ -23,11 +23,6 @@ const Navbar: React.FC = () => {
 
         {isAuthenticated ? (
           <Box display="flex" alignItems="center" gap={2}>
-            <Button component={Link} to="/profile">Profile</Button>
-            <Button component={Link} to="/employees">Employees</Button>
-            <Button component={Link} to="/tasks">Tasks</Button>
-            <Button component={Link} to="/salaries">Salaries</Button>
-
             <Box display="flex" alignItems="center" gap={1}>
               <Avatar
                 alt={user?.name}

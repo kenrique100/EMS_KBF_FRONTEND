@@ -33,14 +33,14 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public Routes */}
       <Route element={<MainLayout children={<Outlet />} />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/404" element={<NotFoundPage />} />
       </Route>
 
-      {/* Protected routes with dashboard layout */}
+      {/* Authenticated Routes */}
       <Route element={
         <ProtectedRoute>
           <DashboardLayout>
@@ -51,6 +51,8 @@ const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+
+        {/* Shared Access (e.g. Admin + User) */}
         <Route path="/salaries" element={<SalariesPage />} />
         <Route path="/salaries/:id" element={<SalaryDetailPage />} />
         <Route path="/tasks" element={<TasksPage />} />
@@ -58,7 +60,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/employees/:id" element={<EmployeeDetailPage />} />
       </Route>
 
-      {/* Admin-only routes with nested protection */}
+      {/* Admin-Only Routes */}
       <Route element={
         <ProtectedRoute>
           <DashboardLayout>
@@ -101,15 +103,14 @@ const AppRoutes: React.FC = () => {
             <SalaryEditPage />
           </ProtectedRoute>
         } />
+        <Route path="/employees/:id/delete" element={
+          <ProtectedRoute roles={['ROLE_ADMIN']}>
+            <EmployeesPage />
+          </ProtectedRoute>
+        } />
       </Route>
-      {/* Added delete route */}
-      <Route path="/employees/:id/delete" element={
-        <ProtectedRoute roles={['ROLE_ADMIN']}>
-          <EmployeesPage />
-        </ProtectedRoute>
-      } />
 
-      {/* Fallback routes */}
+      {/* Default Fallback Routes */}
       <Route path="/" element={
         <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
       } />

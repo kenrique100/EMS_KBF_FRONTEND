@@ -29,7 +29,6 @@ export interface TokenRefreshResponse {
   refreshToken: string;
 }
 
-
 export interface Employee {
   id: number;
   username: string;
@@ -41,6 +40,11 @@ export interface Employee {
   status: EmployeeStatus;
   profilePicturePath?: string;
   documentPath?: string;
+  statusChangeTimestamp?: string;
+  statusExpiration?: string;
+  suspensionDuration?: string;
+  terminationTimestamp?: string;
+  statusHistory?: EmployeeStatusHistoryDTO[];
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +68,25 @@ export interface EmployeeStatusUpdateDTO {
   leaveStartDate?: string; // LocalDate in string format (YYYY-MM-DD)
   expectedReturnDate?: string; // LocalDate in string format (YYYY-MM-DD)
   suspensionDuration?: string; // ISO-8601 duration string (e.g., "PT72H")
+}
+
+export interface EmployeeStatusHistoryDTO {
+  id?: number;
+  status: EmployeeStatus;
+  startTimestamp: string;
+  endTimestamp?: string;
+  allocatedDuration?: string;  // ISO 8601 duration format (e.g., "PT72H")
+  actualDuration?: string;    // ISO 8601 duration format
+  expectedEndTimestamp?: string;
+}
+
+export interface EmployeeStatusHistoryDTO {
+  status: EmployeeStatus;
+  startTimestamp: string;
+  endTimestamp?: string;
+  allocatedDuration?: string;
+  actualDuration?: string;
+  expectedEndTimestamp?: string;
 }
 
 export interface Task {
