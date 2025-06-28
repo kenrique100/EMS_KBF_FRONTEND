@@ -9,10 +9,13 @@ import {
   Paper,
   Button,
   Typography,
+  IconButton
 } from '@mui/material';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { SalaryPayment } from '@/types';
 import { useAuthStore } from '@/store/authStore';
+import DownloadIcon from '@mui/icons-material/Download';
+import { downloadSalaryReceipt } from '@/api/salaries';
 
 interface SalaryListProps {
   salaries: SalaryPayment[];
@@ -74,6 +77,13 @@ const SalaryList: React.FC<SalaryListProps> = ({
                       View
                     </Button>
                   )}
+                  <IconButton
+                    size="small"
+                    onClick={() => downloadSalaryReceipt(salary.id)}
+                    sx={{ mr: 1 }}
+                  >
+                    <DownloadIcon fontSize="small" />
+                  </IconButton>
                   {isAdmin && onEdit && (
                     <Button
                       size="small"
