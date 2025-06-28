@@ -15,10 +15,26 @@ interface AuthState {
   initializeAuth: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   hasRole: (role: Role) => boolean;
+  hasAnyRole: (roles: Role[]) => boolean;
   setUser: (user: UserResponse | null) => void;
   clearAuth: () => void;
   getUserId: () => number | undefined;
+  getAccessToken: () => string | null;
 }
+
+// Token storage abstraction
+const tokenStorage = {
+  getAccessToken: () => localStorage.getItem('accessToken'),
+  getRefreshToken: () => localStorage.getItem('refreshToken'),
+  setTokens: (accessToken: string, refreshToken: string) => {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+  },
+  clearTokens: () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  },
+};
 
 export const useAuthStore = create<AuthState>()(
   immer((set, get) => ({
@@ -33,9 +49,8 @@ export const useAuthStore = create<AuthState>()(
       try {
         const { accessToken, refreshToken, user } = await apiLogin({ username, password });
 
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        set({ user, isAuthenticated: true });
+        tokenStorage.setTokens(accessToken, refreshToken);
+        set({ user, isAuthenticated: true, error: null });
       } catch (err) {
         let errorMessage = 'Login failed';
 
@@ -59,7 +74,10 @@ export const useAuthStore = create<AuthState>()(
     logout: async () => {
       set({ isLoading: true });
       try {
-        await apiLogout();
+        const accessToken = tokenStorage.getAccessToken();
+        if (accessToken) {
+          await apiLogout();
+        }
       } catch (err) {
         console.error('Logout error:', err);
       } finally {
@@ -69,7 +87,9 @@ export const useAuthStore = create<AuthState>()(
     },
 
     initializeAuth: async () => {
-      const accessToken = localStorage.getItem('accessToken');
+      if (get().initialized) return;
+
+      const accessToken = tokenStorage.getAccessToken();
       if (!accessToken) {
         set({ initialized: true });
         return;
@@ -78,8 +98,9 @@ export const useAuthStore = create<AuthState>()(
       set({ isLoading: true });
       try {
         const user = await getCurrentUser();
-        set({ user, isAuthenticated: true });
+        set({ user, isAuthenticated: true, error: null });
       } catch (err) {
+        // Try to refresh token if initial auth fails
         if (!(await get().refreshToken())) {
           get().clearAuth();
         }
@@ -89,16 +110,16 @@ export const useAuthStore = create<AuthState>()(
     },
 
     refreshToken: async () => {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = tokenStorage.getRefreshToken();
       if (!refreshToken) return false;
 
       try {
         const { accessToken, refreshToken: newRefreshToken } = await apiRefreshToken(refreshToken);
 
-        localStorage.setItem('accessToken', accessToken);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
-        }
+        tokenStorage.setTokens(
+          accessToken,
+          newRefreshToken || refreshToken // Fallback to old refresh token if new one not provided
+        );
 
         const user = await getCurrentUser();
         set({ user, isAuthenticated: true, error: null });
@@ -111,8 +132,7 @@ export const useAuthStore = create<AuthState>()(
     },
 
     clearAuth: () => {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      tokenStorage.clearTokens();
       set({ user: null, isAuthenticated: false, error: null });
     },
 
@@ -123,9 +143,46 @@ export const useAuthStore = create<AuthState>()(
       return !!user?.roles?.includes(role);
     },
 
+    hasAnyRole: (roles) => {
+      const { user } = get();
+      return roles.some(role => user?.roles?.includes(role));
+    },
+
     getUserId: () => {
       const { user } = get();
       return user?.id;
     },
+
+    getAccessToken: () => {
+      return tokenStorage.getAccessToken();
+    },
   }))
+);
+
+// Optional: Add axios interceptor for automatic token refresh
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    const authStore = useAuthStore.getState();
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      authStore.getAccessToken()
+    ) {
+      originalRequest._retry = true;
+
+      const refreshed = await authStore.refreshToken();
+      if (refreshed) {
+        const newAccessToken = authStore.getAccessToken();
+        if (newAccessToken) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return axios(originalRequest);
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );

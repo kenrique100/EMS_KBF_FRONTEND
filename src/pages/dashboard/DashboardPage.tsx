@@ -17,7 +17,7 @@ import {
 import { useTasks } from '@/api/tasks';
 import { useEmployees } from '@/hooks/useEmployee';
 import { useSalaries } from '@/hooks/salaryHooks';
-
+import ProductivityDashboard from '@/pages/dashboard/ProductivityDashboard';
 interface StatCardProps {
   icon: React.ReactNode;
   title: string;
@@ -44,7 +44,6 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, loading }) => (
 const DashboardPage: React.FC = () => {
   const { showNotification } = useNotification();
 
-  // Use individual queries
   const {
     data: employees,
     isLoading: isEmployeesLoading,
@@ -63,7 +62,6 @@ const DashboardPage: React.FC = () => {
     error: salariesError,
   } = useSalaries();
 
-  // Show error notifications
   useEffect(() => {
     if (employeesError) {
       showNotification('Failed to load employees data', 'error');
@@ -105,6 +103,11 @@ const DashboardPage: React.FC = () => {
             value={salaries?.length ?? 0}
             loading={isSalariesLoading}
           />
+        </Grid>
+
+        {/* 👇 Productivity Chart Section */}
+        <Grid item xs={12}>
+          <ProductivityDashboard employeeId={1} />
         </Grid>
       </Grid>
     </Container>

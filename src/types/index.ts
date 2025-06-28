@@ -1,7 +1,17 @@
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
-export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED' | 'PAID';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'INCOMPLETED' | 'STOPPED' | 'CANCELLED';
+export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
+
+export type Department =
+  'ADMINISTRATION' |
+  'FISHERY' |
+  'POULTRY' |
+  'RABBITRY' |
+  'CONSTRUCTION' |
+  'CROPS' |
+  'LIVESTOCK' |
+  'FARM_MANAGEMENT';
 
 export interface UserResponse {
   id: number;
@@ -10,7 +20,7 @@ export interface UserResponse {
   email: string;
   roles: Role[];
   profilePicturePath?: string;
-  department?: string;
+  department?: Department;
   dateOfEmployment?: string;
   status?: EmployeeStatus;
   createdAt?: string;
@@ -41,12 +51,13 @@ export interface Employee {
   name: string;
   email: string;
   phoneNumber?: string;
-  department: string;
+  department: Department;
   dateOfEmployment: string;
   status: EmployeeStatus;
   profilePicturePath?: string;
   documentPath?: string;
   statusChangeTimestamp?: string;
+  totalHoursWorkedLast30Days?: number;
   statusExpiration?: string;
   suspensionDuration?: string;
   terminationTimestamp?: string;
@@ -56,17 +67,20 @@ export interface Employee {
 }
 
 export interface EmployeeDTO {
-  id?: number;
+  id: number;
   username: string;
   name: string;
-  password: string;
+  password?: string;
   email: string;
   phoneNumber?: string;
-  department: string;
+  department: Department;
   dateOfEmployment: string;
-  status?: EmployeeStatus;
+  status: EmployeeStatus;
   profilePicturePath?: string;
   documentPath?: string;
+  statusExpiration?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface EmployeeStatusUpdateDTO {
@@ -86,15 +100,39 @@ export interface EmployeeStatusHistoryDTO {
   expectedEndTimestamp?: string;
 }
 
-export interface EmployeeProfileDTO extends Omit<Employee, 'statusHistory'> {
+export interface EmployeeProfileDTO {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  department: Department;
+  dateOfEmployment: string;
+  status: EmployeeStatus;
+  statusChangeTimestamp?: string;
+  statusExpiration?: string;
+  suspensionDuration?: string;
+  terminationTimestamp?: string;
   statusHistory: EmployeeStatusHistoryDTO[];
-  salaryPayments: SalaryPayment[];
-  tasks: Task[];
-  roles?: Role[];
+  profilePicturePath?: string;
+  documentPath?: string;
+  totalHoursWorkedLast30Days: number;
+  salaryPayments: SalaryPaymentDTO[];
+  tasks: TaskDTO[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface EmployeeUpdateDTO extends Omit<EmployeeDTO, 'password'> {
+export interface EmployeeUpdateDTO {
+  id?: number;
+  username?: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  department?: Department;
+  dateOfEmployment?: string;
   password?: string;
+  status?: EmployeeStatus;
 }
 
 export interface Task {
@@ -103,19 +141,23 @@ export interface Task {
   description?: string;
   deadline: string;
   employeeId: number;
-  employeeName: string;
+  employeeName?: string;
   status: TaskStatus;
   expectedHours: number;
   actualHours?: number;
+  totalWorkedMinutes?: number;
   startTime?: string;
   stopTime?: string;
+  lastResumeTime?: string;
+  isValidated?: boolean;
+  validationTime?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface TaskActionDTO {
   taskId: number;
-  action: string;
+  action: 'START' | 'STOP' | 'CONTINUE' | 'COMPLETE';
 }
 
 export interface TaskDTO {
@@ -124,7 +166,18 @@ export interface TaskDTO {
   description?: string;
   deadline: string;
   employeeId: number;
-  expectedHours: number;
+  employeeName?: string;
+  status?: TaskStatus;
+  expectedHours?: number;
+  actualHours?: number;
+  totalWorkedMinutes?: number;
+  startTime?: string;
+  stopTime?: string;
+  lastResumeTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isValidated?: boolean;
+  validationTime?: string;
 }
 
 export interface SalaryPayment {
@@ -143,8 +196,19 @@ export interface SalaryPaymentDTO {
   amount: number;
   paymentDate: string;
   employeeId: number;
+  employeeName?: string;
+  status?: PaymentStatus;
   paymentReference?: string;
   createdAt?: string;
+}
+
+export interface ProductivityStatsDTO {
+  totalHoursWorked: number;
+  dailyAverage: number;
+  workingDays: number;
+  periodStartDate: string;
+  periodEndDate: string;
+  productivityPercentage: number;
 }
 
 export interface ErrorResponse {
@@ -153,4 +217,9 @@ export interface ErrorResponse {
   error: string;
   message: string;
   path: string;
+}
+
+export interface TaskValidationDTO {
+  taskId: number;
+  approve: boolean;
 }

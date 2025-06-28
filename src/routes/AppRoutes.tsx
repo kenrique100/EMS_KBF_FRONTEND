@@ -1,4 +1,3 @@
-// src/AppRoutes.tsx
 import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -51,12 +50,10 @@ const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-
-        {/* Shared Access (e.g. Admin + User) */}
-        <Route path="/salaries" element={<SalariesPage />} />
-        <Route path="/salaries/:id" element={<SalaryDetailPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/:id" element={<TaskDetailPage />} />
+        <Route path="/salaries" element={<SalariesPage />} />
+        <Route path="/salaries/:id" element={<SalaryDetailPage />} />
         <Route path="/employees/:id" element={<EmployeeDetailPage />} />
       </Route>
 
@@ -101,11 +98,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/salaries/:id/edit" element={
           <ProtectedRoute roles={['ROLE_ADMIN']}>
             <SalaryEditPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/employees/:id/delete" element={
-          <ProtectedRoute roles={['ROLE_ADMIN']}>
-            <EmployeesPage />
           </ProtectedRoute>
         } />
       </Route>

@@ -1,15 +1,13 @@
 import React from 'react';
 import { Button, ButtonGroup, Typography, Box, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Task } from '@/types';
+import { TaskDTO } from '@/types';
 
 interface TaskStatusProps {
-  task: Task;
+  task: TaskDTO;
   onStatusChange: (action: string) => void;
   isSubmitting: boolean;
 }
-
-const MotionBox = motion(Box);
 
 const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitting }) => {
   const theme = useTheme();
@@ -19,7 +17,11 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
       case 'PENDING':
         return ['START'];
       case 'IN_PROGRESS':
-        return ['STOP', 'COMPLETE'];
+        return task.stopTime ? ['CONTINUE', 'COMPLETE'] : ['STOP', 'COMPLETE'];
+      case 'COMPLETED':
+        return [];
+      case 'INCOMPLETED':
+        return ['START'];
       default:
         return [];
     }
@@ -28,15 +30,11 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
   const availableActions = getAvailableActions();
 
   return (
-    <MotionBox
-      mb={3}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 12 }}
-    >
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.text.primary }}>
+    <Box mb={3}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
         Task Status: <span style={{ color: theme.palette.primary.main }}>{task.status}</span>
       </Typography>
+
       {availableActions.length > 0 && (
         <ButtonGroup fullWidth orientation="horizontal" sx={{ mt: 2 }}>
           {availableActions.map((action) => (
@@ -61,7 +59,7 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
           ))}
         </ButtonGroup>
       )}
-    </MotionBox>
+    </Box>
   );
 };
 

@@ -1,24 +1,27 @@
+// src/api/employees.ts
 import apiClient from '@/utils/apiClient';
 import {
-  Employee,
   EmployeeDTO,
   EmployeeUpdateDTO,
   EmployeeStatusUpdateDTO,
   EmployeeProfileDTO,
   EmployeeStatusHistoryDTO,
+  SalaryPaymentDTO,
+  ProductivityStatsDTO
 } from '@/types';
 
-export const getEmployees = async (): Promise<Employee[]> => {
+export const getEmployees = async (): Promise<EmployeeDTO[]> => {
   const response = await apiClient.get('/employees');
   return response.data;
 };
 
-export const getEmployeeById = async (id: number): Promise<Employee> => {
+export const getEmployeeById = async (id: number): Promise<EmployeeDTO> => {
   const response = await apiClient.get(`/employees/${id}`);
   return response.data;
 };
 
-export const getEmployeeProfile = async (): Promise<EmployeeProfileDTO> => {
+
+export const getOwnProfile = async (): Promise<EmployeeProfileDTO> => {
   const response = await apiClient.get('/profile');
   return response.data;
 };
@@ -27,21 +30,17 @@ export const createEmployee = async (
   employee: EmployeeDTO,
   profilePicture?: File,
   document?: File
-): Promise<Employee> => {
+): Promise<EmployeeDTO> => {
   const formData = new FormData();
   formData.append(
     'employee',
-    new Blob([JSON.stringify(employee)], {
-      type: 'application/json',
-    })
+    new Blob([JSON.stringify(employee)], { type: 'application/json' })
   );
   if (profilePicture) formData.append('profilePicture', profilePicture);
   if (document) formData.append('document', document);
 
   const response = await apiClient.post('/employees', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
 };
@@ -51,21 +50,17 @@ export const updateEmployee = async (
   employee: EmployeeUpdateDTO,
   profilePicture?: File,
   document?: File
-): Promise<Employee> => {
+): Promise<EmployeeDTO> => {
   const formData = new FormData();
   formData.append(
     'employee',
-    new Blob([JSON.stringify(employee)], {
-      type: 'application/json',
-    })
+    new Blob([JSON.stringify(employee)], { type: 'application/json' })
   );
   if (profilePicture) formData.append('profilePicture', profilePicture);
   if (document) formData.append('document', document);
 
   const response = await apiClient.put(`/employees/${id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
 };
@@ -73,22 +68,20 @@ export const updateEmployee = async (
 export const updateEmployeeStatus = async (
   id: number,
   statusUpdate: EmployeeStatusUpdateDTO
-): Promise<Employee> => {
-  const response = await apiClient.put(`/employees/${id}/status`, statusUpdate);
+): Promise<EmployeeDTO> => {
+  const response = await apiClient.put(`/employees/status/${id}`, statusUpdate);
   return response.data;
 };
 
 export const updateEmployeeProfilePicture = async (
   id: number,
   file: File
-): Promise<Employee> => {
+): Promise<EmployeeDTO> => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiClient.put(`/employees/${id}/picture`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  const response = await apiClient.put(`/employees/picture/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
 };
@@ -100,9 +93,7 @@ export const updateOwnProfilePicture = async (
   formData.append('file', file);
 
   const response = await apiClient.put('/profile/picture', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
 };
@@ -114,6 +105,13 @@ export const deleteEmployee = async (id: number): Promise<void> => {
 export const getEmployeeStatusHistory = async (
   id: number
 ): Promise<EmployeeStatusHistoryDTO[]> => {
-  const response = await apiClient.get(`/employees/${id}/status-history`);
+  const response = await apiClient.get(`/employees/history/status/${id}`);
+  return response.data;
+};
+
+export const getProductivityStats = async (
+  employeeId: number
+): Promise<ProductivityStatsDTO> => {
+  const response = await apiClient.get(`/tasks/productivity/employee/${employeeId}`);
   return response.data;
 };

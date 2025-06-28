@@ -1,6 +1,7 @@
 // src/components/employees/ProfileHeader.tsx
-import { Avatar, Box, Typography, Chip, Button, Skeleton } from '@mui/material';
+import { Box, Typography, Chip, Button, Skeleton } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import EditableAvatar from '@/components/common/EditableAvatar';
 
 interface ProfileHeaderProps {
   name?: string;
@@ -10,6 +11,7 @@ interface ProfileHeaderProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onStatusUpdate?: () => void;
+  onProfilePictureUpdate: (file: File) => Promise<void>;
   loading?: boolean;
 }
 
@@ -21,6 +23,7 @@ const ProfileHeader = ({
                          onEdit = () => {},
                          onDelete = () => {},
                          onStatusUpdate = () => {},
+                         onProfilePictureUpdate,
                          loading = false
                        }: ProfileHeaderProps) => {
   const getStatusColor = () => {
@@ -44,18 +47,17 @@ const ProfileHeader = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-      <Avatar
+      <EditableAvatar
         src={profileUrl}
+        alt={name}
+        onChange={onProfilePictureUpdate}
+        size={120}
         sx={{
-          width: 120,
-          height: 120,
           mb: 2,
           border: '3px solid #f5f5f5',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}
-      >
-        {name.charAt(0)}
-      </Avatar>
+      />
       <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
         {name}
       </Typography>

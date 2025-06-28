@@ -1,3 +1,4 @@
+// src/pages/employees/EmployeeEditPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
@@ -5,14 +6,14 @@ import EmployeeForm from '@/components/employees/EmployeeForm';
 import { notify } from '@/store/notificationService';
 import PageHeader from '@/components/common/PageHeader';
 import { getEmployeeById, updateEmployee } from '@/api/employees';
-import { Employee, EmployeeDTO } from '@/types';
+import { EmployeeDTO } from '@/types';
 import { toEmployeeDTO } from '@/hooks/useEmployee';
 import Loading from '@/components/common/Loading';
 
 const EmployeeEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState<EmployeeDTO | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 

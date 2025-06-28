@@ -19,17 +19,18 @@ import PageHeader from '@/components/common/PageHeader';
 import Loading from '@/components/common/Loading';
 import EmployeeProfile from '@/components/employees/EmployeeProfile';
 import { useNavigate } from 'react-router-dom';
-import { getEmployeeProfile } from '@/api/employees';
+import { getOwnProfile, updateOwnProfilePicture } from '@/api/employees';
 import { getTasksForEmployee } from '@/api/tasks';
 import { getSalaryPaymentsForEmployee } from '@/api/salaries';
-import { Employee, Task, SalaryPayment } from '@/types';
+import { Task, SalaryPayment, EmployeeProfileDTO } from '@/types';
 import { formatDate } from '@/utils/formatters';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PaidIcon from '@mui/icons-material/Paid';
+import { notify } from '@/store/notificationService';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState<EmployeeProfileDTO | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [salaries, setSalaries] = useState<SalaryPayment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,20 +40,20 @@ const ProfilePage: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const profileData = await getEmployeeProfile();
+        const profileData = await getOwnProfile();
         setEmployee(profileData);
 
-        if (profileData.id) {
+        if (profileData.id !== undefined) {
           const [taskData, salaryData] = await Promise.all([
             getTasksForEmployee(profileData.id),
             getSalaryPaymentsForEmployee(profileData.id)
           ]);
-
-          setTasks(taskData);
-          setSalaries(salaryData);
+          setTasks(taskData as Task[]);
+          setSalaries(salaryData as SalaryPayment[]);
         }
       } catch (err) {
         console.error('Error fetching profile info:', err);
+        notify('Failed to load profile data', 'error');
       } finally {
         setLoading(false);
       }
@@ -60,6 +61,16 @@ const ProfilePage: React.FC = () => {
 
     fetchData();
   }, []);
+
+  const handleProfilePictureUpdate = async (file: File) => {
+    try {
+      const updatedProfile = await updateOwnProfilePicture(file);
+      setEmployee(updatedProfile);
+      notify('Profile picture updated successfully', 'success');
+    } catch (error) {
+      notify('Failed to update profile picture', 'error');
+    }
+  };
 
   if (loading || !employee) return <Loading />;
 
@@ -99,7 +110,7 @@ const ProfilePage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {tasks.map(task => (
+                    {tasks.map((task: Task) => (
                       <TableRow
                         key={task.id}
                         hover
@@ -150,7 +161,7 @@ const ProfilePage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {salaries.map(salary => (
+                    {salaries.map((salary: SalaryPayment) => (
                       <TableRow
                         key={salary.id}
                         hover
@@ -164,7 +175,7 @@ const ProfilePage: React.FC = () => {
                             label={salary.status}
                             size="small"
                             color={
-                              salary.status === 'PAID'
+                              salary.status === 'PROCESSED'
                                 ? 'success'
                                 : salary.status === 'PENDING'
                                   ? 'warning'

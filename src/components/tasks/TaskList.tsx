@@ -17,12 +17,14 @@ import {
 import { motion } from 'framer-motion';
 import { formatDate } from '@/utils/formatters';
 import type { Task, TaskStatus } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 
 interface TaskListProps {
     tasks: Task[];
     onViewDetails?: (id: string) => void;
     onEdit?: (id: string) => void;
     onDelete?: (id: string) => void;
+    onValidate?: (id: string) => void;
 }
 
 const getStatusColor = (status: TaskStatus) => {
@@ -30,7 +32,8 @@ const getStatusColor = (status: TaskStatus) => {
         case 'COMPLETED': return 'success';
         case 'IN_PROGRESS': return 'primary';
         case 'PENDING': return 'default';
-        case 'UNCOMPLETED': return 'warning';
+        case 'STOPPED': return 'warning';
+        case 'INCOMPLETED': return 'warning';
         case 'CANCELLED': return 'error';
         default: return 'default';
     }
@@ -41,9 +44,11 @@ const TaskList: React.FC<TaskListProps> = ({
                                                onViewDetails,
                                                onEdit,
                                                onDelete,
+                                               onValidate,
                                            }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { hasRole } = useAuthStore();
 
     if (tasks.length === 0) {
         return (
@@ -95,14 +100,23 @@ const TaskList: React.FC<TaskListProps> = ({
                                           View
                                       </Button>
                                     )}
-                                    {onEdit && (
+                                    {hasRole('ROLE_ADMIN') && onEdit && (
                                       <Button size="small" color="secondary" onClick={() => onEdit(String(task.id))}>
                                           Edit
                                       </Button>
                                     )}
-                                    {onDelete && (
+                                    {hasRole('ROLE_ADMIN') && onDelete && (
                                       <Button size="small" color="error" onClick={() => onDelete(String(task.id))}>
                                           Delete
+                                      </Button>
+                                    )}
+                                    {hasRole('ROLE_ADMIN') && task.status === 'COMPLETED' && !task.isValidated && onValidate && (
+                                      <Button
+                                        size="small"
+                                        color="success"
+                                        onClick={() => onValidate(String(task.id))}
+                                      >
+                                          Validate
                                       </Button>
                                     )}
                                 </Box>

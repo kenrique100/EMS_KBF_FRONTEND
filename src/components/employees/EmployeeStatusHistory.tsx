@@ -11,6 +11,7 @@ import {
   Chip,
 } from '@mui/material';
 import { EmployeeStatusHistoryDTO } from '@/types';
+import { formatDate } from '@/utils/formatters';
 
 interface EmployeeStatusHistoryProps {
   history: EmployeeStatusHistoryDTO[];
@@ -20,7 +21,7 @@ const EmployeeStatusHistory: React.FC<EmployeeStatusHistoryProps> = ({ history }
   // Filter out ACTIVE statuses
   const filteredHistory = history.filter(record => record.status !== 'ACTIVE');
 
-  if (!filteredHistory || filteredHistory.length === 0) {
+  if (filteredHistory.length === 0) {
     return (
       <Typography variant="body2" color="textSecondary" sx={{ p: 2 }}>
         No status history available
@@ -28,78 +29,32 @@ const EmployeeStatusHistory: React.FC<EmployeeStatusHistoryProps> = ({ history }
     );
   }
 
-  const formatDateTime = (timestamp?: string): string => {
-    if (!timestamp) return 'N/A';
-    try {
-      return new Date(timestamp).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return 'Invalid Date';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ON_LEAVE': return 'warning';
+      case 'SUSPENDED': return 'info';
+      case 'TERMINATED': return 'error';
+      default: return 'default';
     }
   };
 
-  const formatDuration = (duration?: string, start?: string, end?: string): string => {
-    if (duration) {
-      try {
-        const matches = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-        if (!matches) return duration;
+  const formatDuration = (duration?: string) => {
+    if (!duration) return 'N/A';
 
-        const hours = matches[1] ? parseInt(matches[1]) : 0;
-        const minutes = matches[2] ? parseInt(matches[2]) : 0;
-        const seconds = matches[3] ? parseInt(matches[3]) : 0;
-        const totalHours = hours + (minutes / 60) + (seconds / 3600);
+    try {
+      // Convert ISO 8601 duration to hours
+      const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      if (!match) return duration;
 
-        if (totalHours >= 24) {
-          const days = Math.floor(totalHours / 24);
-          const remainingHours = Math.floor(totalHours % 24);
-          return `${days}d ${remainingHours}h`;
-        }
-        return `${totalHours.toFixed(1)}h`;
-      } catch {
-        return duration;
-      }
+      const hours = parseInt(match[1] || '0');
+      const minutes = parseInt(match[2] || '0');
+      const seconds = parseInt(match[3] || '0');
+
+      const totalHours = hours + (minutes / 60) + (seconds / 3600);
+      return `${totalHours.toFixed(1)} hours`;
+    } catch {
+      return duration;
     }
-
-    if (start && end) {
-      try {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        const diffMs = endDate.getTime() - startDate.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-        if (diffHours >= 24) {
-          const days = Math.floor(diffHours / 24);
-          const hours = Math.floor(diffHours % 24);
-          return `${days}d ${hours}h`;
-        }
-        return `${diffHours.toFixed(1)}h`;
-      } catch {
-        return 'N/A';
-      }
-    }
-
-    if (start && !end) {
-      try {
-        const startDate = new Date(start);
-        const now = new Date();
-        const diffMs = now.getTime() - startDate.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-        if (diffHours >= 24) {
-          const days = Math.floor(diffHours / 24);
-          const hours = Math.floor(diffHours % 24);
-          return `${days}d ${hours}h (ongoing)`;
-        }
-        return `${diffHours.toFixed(1)}h (ongoing)`;
-      } catch {
-        return 'N/A';
-      }
-    }
-
-    return 'N/A';
   };
 
   return (
@@ -120,24 +75,16 @@ const EmployeeStatusHistory: React.FC<EmployeeStatusHistoryProps> = ({ history }
               <TableCell>
                 <Chip
                   label={record.status}
-                  color={
-                    record.status === 'ON_LEAVE'
-                      ? 'warning'
-                      : record.status === 'SUSPENDED'
-                        ? 'info'
-                        : record.status === 'TERMINATED'
-                          ? 'error'
-                          : 'default'
-                  }
+                  color={getStatusColor(record.status)}
                   size="small"
                 />
               </TableCell>
-              <TableCell>{formatDateTime(record.startTimestamp)}</TableCell>
+              <TableCell>{formatDate(record.startTimestamp)}</TableCell>
               <TableCell>
-                {record.endTimestamp ? formatDateTime(record.endTimestamp) : 'Current'}
+                {record.endTimestamp ? formatDate(record.endTimestamp) : 'Current'}
               </TableCell>
               <TableCell>
-                {formatDuration(record.actualDuration, record.startTimestamp, record.endTimestamp)}
+                {formatDuration(record.actualDuration)}
                 {record.allocatedDuration && (
                   <Typography variant="caption" display="block" color="textSecondary">
                     (Allocated: {formatDuration(record.allocatedDuration)})
@@ -146,7 +93,7 @@ const EmployeeStatusHistory: React.FC<EmployeeStatusHistoryProps> = ({ history }
               </TableCell>
               <TableCell>
                 {record.expectedEndTimestamp
-                  ? formatDateTime(record.expectedEndTimestamp)
+                  ? formatDate(record.expectedEndTimestamp)
                   : 'N/A'}
               </TableCell>
             </TableRow>

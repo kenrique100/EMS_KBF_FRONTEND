@@ -1,126 +1,102 @@
 // src/components/common/EditableAvatar.tsx
-import React, { useState, useRef } from 'react';
-import { Avatar, IconButton, CircularProgress, Box, Tooltip, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Avatar, Box, IconButton, SxProps, Theme } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { validateFile } from '@/utils/fileUtils';
+import { styled } from '@mui/material/styles';
 
 interface EditableAvatarProps {
   src?: string;
   alt: string;
   onChange: (file: File) => Promise<void>;
-  size?: number;
-  disabled?: boolean;
+  size: number;
+  sx?: SxProps<Theme>;
 }
+
+const Input = styled('input')({
+  display: 'none',
+});
 
 const EditableAvatar: React.FC<EditableAvatarProps> = ({
                                                          src,
                                                          alt,
                                                          onChange,
-                                                         size = 120,
-                                                         disabled = false
+                                                         size,
+                                                         sx
                                                        }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const nameInitial = alt.charAt(0).toUpperCase();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      // Validate the file before upload
-      validateFile(file, 'image');
-      setError(null);
-      setLoading(true);
-      await onChange(file);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid file');
-      console.error('Error uploading profile picture:', err);
-    } finally {
-      setLoading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+    if (e.target.files && e.target.files.length > 0) {
+      setIsUploading(true);
+      try {
+        await onChange(e.target.files[0]);
+      } finally {
+        setIsUploading(false);
       }
     }
   };
 
   return (
-    <Box sx={{
-      position: 'relative',
-      width: size,
-      height: size,
-      margin: '0 auto'
-    }}>
-      {loading ? (
-        <CircularProgress
-          size={size}
+    <Box
+      sx={{
+        position: 'relative',
+        width: size,
+        height: size,
+        ...sx,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Avatar
+        src={src}
+        alt={alt}
+        sx={{
+          width: '100%',
+          height: '100%',
+          transition: 'opacity 0.3s',
+          opacity: isHovered ? 0.7 : 1,
+        }}
+      >
+        {alt.charAt(0)}
+      </Avatar>
+
+      {isHovered && (
+        <Box
           sx={{
             position: 'absolute',
             top: 0,
-            left: 0
-          }}
-        />
-      ) : (
-        <Avatar
-          src={src}
-          alt={alt}
-          sx={{
-            width: '100%',
-            height: '100%',
-            fontSize: size * 0.5,
-            cursor: disabled ? 'default' : 'pointer',
-            border: error ? '2px solid #f44336' : '2px solid #e0e0e0',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {!src && nameInitial}
-        </Avatar>
-      )}
-
-      {!disabled && (
-        <>
-          <Tooltip title="Change profile picture">
+          <label htmlFor="avatar-upload">
+            <Input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
             <IconButton
               color="primary"
+              component="span"
+              disabled={isUploading}
               sx={{
-                position: 'absolute',
-                bottom: 8,
-                right: 8,
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'action.hover' },
-                boxShadow: 1
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                },
               }}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading}
             >
-              <EditIcon fontSize="small" />
+              <EditIcon />
             </IconButton>
-          </Tooltip>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/jpeg, image/png, image/gif, image/webp"
-            style={{ display: 'none' }}
-            disabled={loading || disabled}
-          />
-        </>
-      )}
-
-      {error && (
-        <Typography
-          color="error"
-          variant="caption"
-          sx={{
-            display: 'block',
-            textAlign: 'center',
-            mt: 1
-          }}
-        >
-          {error}
-        </Typography>
+          </label>
+        </Box>
       )}
     </Box>
   );
