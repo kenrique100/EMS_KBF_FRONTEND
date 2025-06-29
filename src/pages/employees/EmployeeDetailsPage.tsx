@@ -32,7 +32,9 @@ import {
   BarChart as BarChartIcon,
   Assignment as AssignmentIcon,
   Paid as PaidIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import {
   getEmployeeById,
@@ -42,10 +44,10 @@ import {
   getProductivityStats,
   updateEmployeeProfilePicture
 } from '@/api/employees';
-import { getSalaryPaymentsForEmployee } from '@/api/salaries';
+import { getSalaryPaymentsForEmployee, downloadSalaryReceipt } from '@/api/salaries';
 import { getTasksForEmployee } from '@/api/tasks';
 import { EmployeeStatusUpdateDTO, Task, SalaryPaymentDTO, EmployeeDTO } from '@/types';
-import { formatDate } from '@/utils/formatters';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import EmployeeStatusHistory from '@/components/employees/EmployeeStatusHistory';
 import { notify } from '@/store/notificationService';
 import StatusUpdateDialog from '@/components/employees/StatusUpdateDialog';
@@ -54,6 +56,7 @@ import ProfileHeader from '@/components/employees/ProfileHeader';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import ProductivityDashboard from '@/pages/dashboard/ProductivityDashboard';
 import EditableAvatar from '@/components/common/EditableAvatar';
+import { useAuthStore } from '@/store/authStore';
 
 const EmployeeDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -63,6 +66,8 @@ const EmployeeDetailsPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const employeeId = Number(id);
+  const { hasRole } = useAuthStore();
+  const isAdmin = hasRole('ROLE_ADMIN');
 
   const { data: employee, isLoading: isEmployeeLoading } = useQuery<EmployeeDTO>({
     queryKey: ['employee', id],
@@ -178,9 +183,7 @@ const EmployeeDetailsPage: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
-        {/* Left Column - Profile Section */}
         <Grid item xs={12} md={4}>
-
           <ProfileHeader
             name={employee.name}
             department={employee.department}
@@ -189,9 +192,8 @@ const EmployeeDetailsPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={() => setDeleteDialogOpen(true)}
             onStatusUpdate={() => setStatusDialogOpen(true)}
-            onProfilePictureUpdate={handleProfilePictureUpdate} // ✅ Add this
+            onProfilePictureUpdate={handleProfilePictureUpdate}
           />
-
 
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -255,7 +257,6 @@ const EmployeeDetailsPage: React.FC = () => {
           )}
         </Grid>
 
-        {/* Right Column - Details Section */}
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
@@ -291,6 +292,7 @@ const EmployeeDetailsPage: React.FC = () => {
                             <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 600 }}>Amount</TableCell>
                             <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -298,7 +300,7 @@ const EmployeeDetailsPage: React.FC = () => {
                             <TableRow key={salary.id} hover>
                               <TableCell>{formatDate(salary.paymentDate)}</TableCell>
                               <TableCell align="right">
-                                ${salary.amount.toFixed(2)}
+                                {formatCurrency(salary.amount)}
                               </TableCell>
                               <TableCell>
                                 <Chip
@@ -309,6 +311,15 @@ const EmployeeDetailsPage: React.FC = () => {
                                       salary.status === 'PENDING' ? 'warning' : 'default'
                                   }
                                 />
+                              </TableCell>
+                              <TableCell>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => downloadSalaryReceipt(salary.id!)}
+                                  title="Download Receipt"
+                                >
+                                  <DownloadIcon fontSize="small" />
+                                </IconButton>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -469,7 +480,6 @@ const EmployeeDetailsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Dialogs */}
       <StatusUpdateDialog
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}

@@ -12,9 +12,10 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
+import DownloadIcon from '@mui/icons-material/Download';
 import PageHeader from '@/components/common/PageHeader';
 import Loading from '@/components/common/Loading';
-import { getSalaryPaymentById } from '@/api/salaries';
+import { getSalaryPaymentById, downloadSalaryReceipt } from '@/api/salaries';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { useAuthStore } from '@/store/authStore';
 import { PaymentStatus, SalaryPayment } from '@/types';
@@ -22,8 +23,6 @@ import { useNotification } from '@/contexts/NotificationContext';
 
 const getStatusColor = (status: PaymentStatus): string => {
   switch (status) {
-    case 'PAID':
-      return 'success.main';
     case 'PROCESSED':
       return 'info.main';
     case 'FAILED':
@@ -99,6 +98,13 @@ const SalaryDetailPage: React.FC = () => {
             >
               <ArrowBackIcon />
             </IconButton>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => downloadSalaryReceipt(Number(id))}
+            >
+              Download Receipt
+            </Button>
             {hasAdminRole && (
               <Button
                 variant="contained"

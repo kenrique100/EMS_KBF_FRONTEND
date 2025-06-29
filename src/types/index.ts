@@ -223,3 +223,34 @@ export interface TaskValidationDTO {
   taskId: number;
   approve: boolean;
 }
+
+// In your types file (e.g., src/types/index.ts)
+export interface SalaryReceiptDTO {
+  receiptNumber: string;
+  issueDate: string;
+  employee: {
+    id: number;
+    name: string;
+    department: string;
+    employmentDate: string;
+  };
+  salary: {
+    amount: number;
+    paymentDate: string;
+    paymentReference: string;
+    status: string;
+  };
+  tasks?: Array<{
+    title: string;
+    expectedHours: number;
+    actualHours: number;
+    completionRate: number;
+    status: string;
+  }>;
+  productivitySummary?: {
+    totalExpectedHours: number;
+    totalActualHours: number;
+    overallProductivity: number;
+    workingDays: number;
+  };
+}
