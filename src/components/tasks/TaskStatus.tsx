@@ -20,7 +20,7 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
         return task.stopTime ? ['CONTINUE', 'COMPLETE'] : ['STOP', 'COMPLETE'];
       case 'COMPLETED':
         return [];
-      case 'INCOMPLETED':
+      case 'UNCOMPLETED':
         return ['START'];
       default:
         return [];

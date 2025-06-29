@@ -33,7 +33,7 @@ const getStatusColor = (status: TaskStatus) => {
         case 'IN_PROGRESS': return 'primary';
         case 'PENDING': return 'default';
         case 'STOPPED': return 'warning';
-        case 'INCOMPLETED': return 'warning';
+        case 'UNCOMPLETED': return 'warning';
         case 'CANCELLED': return 'error';
         default: return 'default';
     }

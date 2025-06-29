@@ -1,5 +1,5 @@
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'INCOMPLETED' | 'STOPPED' | 'CANCELLED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'STOPPED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 
