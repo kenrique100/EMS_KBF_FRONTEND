@@ -1,62 +1,79 @@
+// src/validations/employeeValidation.ts
 import * as yup from 'yup';
-import { EmployeeDTO, Department, EmployeeStatus } from '@/types';
+import { EmployeeDTO } from '@/types';
 
-/**
- * Regex for basic phone number validation.
- */
 const phoneRegex = /^\+?[0-9\s-]{10,}$/;
+const nationalIdRegex = /^[0-9]{9,15}$/;
 
-/**
- * Yup validation schema for EmployeeDTO
- */
-export const employeeSchema: yup.ObjectSchema<EmployeeDTO> = yup.object({
+// Define Department and EmployeeStatus as enums for validation
+const Department = {
+  ADMINISTRATION: 'ADMINISTRATION',
+  FISHERY: 'FISHERY',
+  POULTRY: 'POULTRY',
+  RABBITRY: 'RABBITRY',
+  CONSTRUCTION: 'CONSTRUCTION',
+  CROPS: 'CROPS',
+  LIVESTOCK: 'LIVESTOCK',
+  FARM_MANAGEMENT: 'FARM_MANAGEMENT'
+} as const;
+
+const EmployeeStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  ON_LEAVE: 'ON_LEAVE',
+  SUSPENDED: 'SUSPENDED',
+  TERMINATED: 'TERMINATED'
+} as const;
+
+export const employeeSchema = yup.object().shape({
   id: yup.number().optional(),
 
-  username: yup.string().required('Username is required'),
+  username: yup.string()
+    .required('Username is required')
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username cannot exceed 30 characters'),
 
-  name: yup.string().required('Full name is required'),
+  name: yup.string()
+    .required('Full name is required')
+    .max(100, 'Name cannot exceed 100 characters'),
 
-  // Make password optional to match EmployeeDTO
-  password: yup
-    .string()
+  password: yup.string()
     .min(6, 'Password must be at least 6 characters')
     .optional(),
 
-  email: yup
-    .string()
+  email: yup.string()
     .email('Invalid email')
-    .required('Email is required'),
+    .required('Email is required')
+    .max(100, 'Email cannot exceed 100 characters'),
 
-  phoneNumber: yup
-    .string()
+  phoneNumber: yup.string()
     .matches(phoneRegex, 'Invalid phone number')
     .optional(),
 
-  department: yup
-    .mixed<Department>()
-    .oneOf([
-      'ADMINISTRATION',
-      'FISHERY',
-      'POULTRY',
-      'RABBITRY',
-      'CONSTRUCTION',
-      'CROPS',
-      'LIVESTOCK',
-      'FARM_MANAGEMENT',
-    ])
+  nationalId: yup.string()
+    .matches(nationalIdRegex, 'National ID must be 9-15 digits')
+    .optional(),
+
+  department: yup.string()
+    .oneOf(Object.values(Department))
     .required('Department is required'),
 
-  dateOfEmployment: yup.string().required('Date of employment is required'),
+  dateOfEmployment: yup.string()
+    .required('Date of employment is required')
+    .test('is-date', 'Invalid date format', (value) => {
+      if (!value) return false;
+      return !isNaN(Date.parse(value));
+    }),
 
-  status: yup
-    .mixed<EmployeeStatus>()
-    .oneOf(['ACTIVE', 'INACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED'])
+  status: yup.string()
+    .oneOf(Object.values(EmployeeStatus))
     .optional(),
 
   profilePicturePath: yup.string().optional(),
   documentPath: yup.string().optional(),
-
-  // Include these to match EmployeeDTO type
-  createdAt: yup.string().required('Creation timestamp is required'),
-  updatedAt: yup.string().required('Update timestamp is required'),
-}).required();
+  statusExpiration: yup.string().optional(),
+  totalHoursWorkedLast30Days: yup.number().optional(),
+  suspensionDuration: yup.string().optional(),
+  createdAt: yup.string().optional(),
+  updatedAt: yup.string().optional(),
+}) as yup.ObjectSchema<EmployeeDTO>;

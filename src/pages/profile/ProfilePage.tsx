@@ -1,5 +1,4 @@
-// src/pages/ProfilePage.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Tabs,
@@ -13,66 +12,59 @@ import {
   TableBody,
   TableContainer,
   Paper,
-  Chip
+  Chip,
+  CircularProgress,
 } from '@mui/material';
 import PageHeader from '@/components/common/PageHeader';
 import Loading from '@/components/common/Loading';
 import EmployeeProfile from '@/components/employees/EmployeeProfile';
 import { useNavigate } from 'react-router-dom';
-import { getOwnProfile, updateOwnProfilePicture } from '@/api/employees';
+import { getOwnProfile } from '@/api/employees';
 import { getTasksForEmployee } from '@/api/tasks';
 import { getSalaryPaymentsForEmployee } from '@/api/salaries';
-import { Task, SalaryPayment, EmployeeProfileDTO } from '@/types';
+import { TaskDTO, SalaryPaymentDTO, EmployeeProfileDTO } from '@/types';
 import { formatDate } from '@/utils/formatters';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PaidIcon from '@mui/icons-material/Paid';
 import { notify } from '@/store/notificationService';
+import { uploadProfilePicture } from '@/api/profilePictures';
+import { useQuery } from '@tanstack/react-query';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [employee, setEmployee] = useState<EmployeeProfileDTO | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [salaries, setSalaries] = useState<SalaryPayment[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const profileData = await getOwnProfile();
-        setEmployee(profileData);
+  const { data: employee, isLoading: isEmployeeLoading } = useQuery<EmployeeProfileDTO>({
+    queryKey: ['ownProfile'],
+    queryFn: getOwnProfile,
+  });
 
-        if (profileData.id !== undefined) {
-          const [taskData, salaryData] = await Promise.all([
-            getTasksForEmployee(profileData.id),
-            getSalaryPaymentsForEmployee(profileData.id)
-          ]);
-          setTasks(taskData as Task[]);
-          setSalaries(salaryData as SalaryPayment[]);
-        }
-      } catch (err) {
-        console.error('Error fetching profile info:', err);
-        notify('Failed to load profile data', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: tasks, isLoading: isTasksLoading } = useQuery<TaskDTO[]>({
+    queryKey: ['ownTasks'],
+    queryFn: () => employee?.id ? getTasksForEmployee(employee.id) : [],
+    enabled: !!employee?.id,
+  });
 
-    fetchData();
-  }, []);
+  const { data: salaries, isLoading: isSalariesLoading } = useQuery<SalaryPaymentDTO[]>({
+    queryKey: ['ownSalaries'],
+    queryFn: () => employee?.id ? getSalaryPaymentsForEmployee(employee.id) : [],
+    enabled: !!employee?.id,
+  });
 
   const handleProfilePictureUpdate = async (file: File) => {
+    if (!employee?.id) return;
+
     try {
-      const updatedProfile = await updateOwnProfilePicture(file);
-      setEmployee(updatedProfile);
+      await uploadProfilePicture(employee.id, file);
       notify('Profile picture updated successfully', 'success');
     } catch (error) {
       notify('Failed to update profile picture', 'error');
     }
   };
 
-  if (loading || !employee) return <Loading />;
+  if (isEmployeeLoading || !employee) {
+    return <Loading />;
+  }
 
   return (
     <Container maxWidth="md">
@@ -81,7 +73,7 @@ const ProfilePage: React.FC = () => {
         breadcrumbs={[{ label: 'Profile', path: '/profile' }]}
       />
 
-      <EmployeeProfile employee={employee} />
+      <EmployeeProfile employee={employee} onProfilePictureUpdate={handleProfilePictureUpdate} />
 
       <Tabs
         value={activeTab}
@@ -99,7 +91,11 @@ const ProfilePage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Assigned Tasks
             </Typography>
-            {tasks.length > 0 ? (
+            {isTasksLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : tasks && tasks.length > 0 ? (
               <TableContainer component={Paper}>
                 <Table size="small">
                   <TableHead>
@@ -110,7 +106,7 @@ const ProfilePage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {tasks.map((task: Task) => (
+                    {tasks.map((task) => (
                       <TableRow
                         key={task.id}
                         hover
@@ -150,7 +146,11 @@ const ProfilePage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Salary Payments
             </Typography>
-            {salaries.length > 0 ? (
+            {isSalariesLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : salaries && salaries.length > 0 ? (
               <TableContainer component={Paper}>
                 <Table size="small">
                   <TableHead>
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {salaries.map((salary: SalaryPayment) => (
+                    {salaries.map((salary) => (
                       <TableRow
                         key={salary.id}
                         hover

@@ -1,15 +1,16 @@
-// src/components/dashboard/ProductivityDashboard.tsx
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, useTheme } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getProductivityStats } from '@/api/tasks';
 import { ProductivityStatsDTO } from '@/types';
+import { motion } from 'framer-motion';
 
 interface ProductivityDashboardProps {
   employeeId: number;
 }
 
 const ProductivityDashboard: React.FC<ProductivityDashboardProps> = ({ employeeId }) => {
+  const theme = useTheme();
   const [stats, setStats] = useState<ProductivityStatsDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,48 +71,99 @@ const ProductivityDashboard: React.FC<ProductivityDashboardProps> = ({ employeeI
   }
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
+    <Paper
+      sx={{
+        p: 3,
+        mb: 3,
+        borderRadius: 4,
+        boxShadow: theme.shadows[3]
+      }}
+      component={motion.div}
+      whileHover={{ y: -2 }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
         Productivity Overview (Last 30 Days)
       </Typography>
 
-      <Box display="flex" justifyContent="space-between" mb={3}>
-        <Box>
-          <Typography variant="subtitle2">Total Hours Worked</Typography>
-          <Typography variant="h4">{stats.totalHoursWorked.toFixed(1)}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="subtitle2">Daily Average</Typography>
-          <Typography variant="h4">{stats.dailyAverage.toFixed(1)}</Typography>
-        </Box>
-        <Box>
-          <Typography variant="subtitle2">Productivity</Typography>
-          <Typography variant="h4" color={stats.productivityPercentage >= 100 ? 'success.main' : 'warning.main'}>
-            {stats.productivityPercentage.toFixed(1)}%
-          </Typography>
-        </Box>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        mb={3}
+        flexWrap="wrap"
+        gap={2}
+      >
+        {[
+          { label: 'Total Hours Worked', value: stats.totalHoursWorked.toFixed(1) },
+          { label: 'Daily Average', value: stats.dailyAverage.toFixed(1) },
+          {
+            label: 'Productivity',
+            value: stats.productivityPercentage.toFixed(1) + '%',
+            color: stats.productivityPercentage >= 100 ? 'success.main' : 'warning.main'
+          }
+        ].map((metric, index) => (
+          <Box
+            key={metric.label}
+            component={motion.div}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            sx={{
+              minWidth: 120,
+              textAlign: 'center',
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'background.paper'
+            }}
+          >
+            <Typography variant="subtitle2" color="text.secondary">
+              {metric.label}
+            </Typography>
+            <Typography
+              variant="h4"
+              color={metric.color || 'text.primary'}
+              sx={{ fontWeight: 700 }}
+            >
+              {metric.value}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
       <Box height={300}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: theme.palette.text.secondary }}
+            />
+            <YAxis
+              tick={{ fill: theme.palette.text.secondary }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: theme.palette.background.paper,
+                borderColor: theme.palette.divider,
+                borderRadius: theme.shape.borderRadius
+              }}
+            />
             <Legend />
             <Line
               type="monotone"
               dataKey="expected"
-              stroke="#8884d8"
-              name="Expected Hours"
+              stroke={theme.palette.primary.main}
               strokeDasharray="5 5"
+              name="Expected Hours"
+              strokeWidth={2}
+              dot={{ r: 3 }}
             />
             <Line
               type="monotone"
               dataKey="actual"
-              stroke="#82ca9d"
+              stroke={theme.palette.success.main}
               name="Actual Hours"
+              strokeWidth={2}
+              dot={{ r: 3 }}
             />
           </LineChart>
         </ResponsiveContainer>

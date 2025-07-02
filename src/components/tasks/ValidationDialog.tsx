@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
+  Button
 } from '@mui/material';
 
 interface ValidationDialogProps {
@@ -17,29 +17,24 @@ interface ValidationDialogProps {
 const ValidationDialog: React.FC<ValidationDialogProps> = ({
                                                              open,
                                                              onClose,
-                                                             onConfirm,
+                                                             onConfirm
                                                            }) => {
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Validate Task</DialogTitle>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Task Validation</DialogTitle>
       <DialogContent>
         <DialogContentText>
           Do you approve this task completion?
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={() => onConfirm(false)}
-          color="error"
-        >
+        <Button onClick={onClose} variant="outlined">
+          Cancel
+        </Button>
+        <Button onClick={() => onConfirm(false)} color="error" variant="outlined">
           Reject
         </Button>
-        <Button
-          onClick={() => onConfirm(true)}
-          color="success"
-          autoFocus
-        >
+        <Button onClick={() => onConfirm(true)} color="success" variant="contained" autoFocus>
           Approve
         </Button>
       </DialogActions>

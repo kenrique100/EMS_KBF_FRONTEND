@@ -13,12 +13,11 @@ const EmployeeCreatePage: React.FC = () => {
 
   const handleSubmit = async (
     employeeData: EmployeeDTO,
-    profilePicture?: File,
-    document?: File
+
   ) => {
     setIsSubmitting(true);
     try {
-      await createEmployee(employeeData, profilePicture, document);
+      await createEmployee(employeeData);
       notify('Employee created successfully', 'success');
       navigate('/employees');
     } catch (error) {

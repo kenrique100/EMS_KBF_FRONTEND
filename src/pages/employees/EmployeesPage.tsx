@@ -14,39 +14,34 @@ import { notify } from '@/store/notificationService';
 import { getEmployees, deleteEmployee } from '@/api/employees';
 import { Employee, EmployeeDTO } from '@/types';
 
-const mapDTOToEmployee = (dto: EmployeeDTO): Employee | null => {
-  const missing: string[] = [];
-
-  if (dto.id === undefined) missing.push('id');
-  if (!dto.createdAt) missing.push('createdAt');
-  if (!dto.updatedAt) missing.push('updatedAt');
-
-  if (missing.length > 0) {
-    console.warn(`Skipped EmployeeDTO (missing: ${missing.join(', ')}):`, dto);
-    return null;
-  }
-
-  return {
-    id: dto.id,
-    username: dto.username,
-    name: dto.name,
-    email: dto.email,
-    phoneNumber: dto.phoneNumber,
-    department: dto.department,
-    dateOfEmployment: dto.dateOfEmployment,
-    status: dto.status ?? 'ACTIVE',
-    profilePicturePath: dto.profilePicturePath,
-    documentPath: dto.documentPath,
-    statusChangeTimestamp: undefined,
-    totalHoursWorkedLast30Days: 0,
-    statusExpiration: dto.statusExpiration,
-    suspensionDuration: undefined,
-    terminationTimestamp: undefined,
-    statusHistory: [],
-    createdAt: dto.createdAt,
-    updatedAt: dto.updatedAt,
-  };
-};
+const mapDTOToEmployee = (dto: EmployeeDTO): Employee => ({
+  id: dto.id,
+  username: dto.username,
+  name: dto.name,
+  email: dto.email,
+  phoneNumber: dto.phoneNumber,
+  department: dto.department,
+  dateOfEmployment: dto.dateOfEmployment,
+  status: dto.status ?? 'ACTIVE',
+  profilePicturePath: dto.profilePicturePath,
+  documentPath: dto.documentPath,
+  statusChangeTimestamp: undefined,
+  totalHoursWorkedLast30Days: dto.totalHoursWorkedLast30Days ?? 0,
+  statusExpiration: dto.statusExpiration,
+  suspensionDuration: dto.suspensionDuration,
+  terminationTimestamp: undefined,
+  statusHistory: [],
+  createdAt: dto.createdAt,
+  updatedAt: dto.updatedAt,
+  nationalId: dto.nationalId, // Added missing field
+  password: dto.password,
+  workingDaysCount: 0,
+  lastProductivityResetDate: undefined,
+  currentPeriodStartDate: undefined,
+  totalProductiveDays: 0,
+  lastProductivityUpdate: undefined,
+  profilePictureThumbnailPath: undefined
+});
 
 const EmployeesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,9 +56,7 @@ const EmployeesPage: React.FC = () => {
     queryFn: getEmployees,
   });
 
-  const employees: Employee[] = employeeDTOs
-    .map(mapDTOToEmployee)
-    .filter((e): e is Employee => e !== null);
+  const employees: Employee[] = employeeDTOs.map(mapDTOToEmployee);
 
   const deleteMutation = useMutation({
     mutationFn: deleteEmployee,

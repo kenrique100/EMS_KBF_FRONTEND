@@ -13,11 +13,18 @@ import {
     useMediaQuery,
     useTheme,
     Box,
+    IconButton,
+    Tooltip
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { formatDate } from '@/utils/formatters';
 import type { Task, TaskStatus } from '@/types';
 import { useAuthStore } from '@/store/authStore';
+
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 interface TaskListProps {
     tasks: Task[];
@@ -38,6 +45,8 @@ const getStatusColor = (status: TaskStatus) => {
         default: return 'default';
     }
 };
+
+const MotionTableRow = motion(TableRow);
 
 const TaskList: React.FC<TaskListProps> = ({
                                                tasks,
@@ -60,27 +69,47 @@ const TaskList: React.FC<TaskListProps> = ({
 
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 5 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-          <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
+          <TableContainer
+            component={Paper}
+            elevation={3}
+            sx={{
+                borderRadius: 3,
+                overflow: 'hidden',
+                boxShadow: theme.shadows[3],
+            }}
+          >
               <Table size={isMobile ? 'small' : 'medium'}>
                   <TableHead>
-                      <TableRow>
-                          <TableCell>Title</TableCell>
-                          {!isMobile && <TableCell>Employee</TableCell>}
-                          <TableCell>Deadline</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell align="right">Actions</TableCell>
+                      <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
+                          <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                          {!isMobile && <TableCell sx={{ fontWeight: 600 }}>Employee</TableCell>}
+                          <TableCell sx={{ fontWeight: 600 }}>Deadline</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }} align="right">Actions</TableCell>
                       </TableRow>
                   </TableHead>
                   <TableBody>
-                      {tasks.map((task) => (
-                        <motion.tr
+                      {tasks.map((task, index) => (
+                        <MotionTableRow
                           key={task.id}
-                          whileHover={{ scale: 1.01 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          whileHover={{
+                              scale: 1.005,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                          }}
+                          sx={{
+                              transition: 'all 0.2s ease-in-out',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                  backgroundColor: theme.palette.action.hover,
+                              },
+                          }}
                         >
                             <TableCell>{task.title}</TableCell>
                             {!isMobile && <TableCell>{task.employeeName || task.employeeId}</TableCell>}
@@ -96,32 +125,60 @@ const TaskList: React.FC<TaskListProps> = ({
                             <TableCell align="right">
                                 <Box display="flex" flexWrap="wrap" gap={1} justifyContent="flex-end">
                                     {onViewDetails && (
-                                      <Button size="small" onClick={() => onViewDetails(String(task.id))}>
-                                          View
-                                      </Button>
+                                      isMobile ? (
+                                        <Tooltip title="View">
+                                            <IconButton size="small" onClick={() => onViewDetails(String(task.id))}>
+                                                <VisibilityIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                      ) : (
+                                        <Button size="small" onClick={() => onViewDetails(String(task.id))}>
+                                            View
+                                        </Button>
+                                      )
                                     )}
                                     {hasRole('ROLE_ADMIN') && onEdit && (
-                                      <Button size="small" color="secondary" onClick={() => onEdit(String(task.id))}>
-                                          Edit
-                                      </Button>
+                                      isMobile ? (
+                                        <Tooltip title="Edit">
+                                            <IconButton size="small" color="secondary" onClick={() => onEdit(String(task.id))}>
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                      ) : (
+                                        <Button size="small" color="secondary" onClick={() => onEdit(String(task.id))}>
+                                            Edit
+                                        </Button>
+                                      )
                                     )}
                                     {hasRole('ROLE_ADMIN') && onDelete && (
-                                      <Button size="small" color="error" onClick={() => onDelete(String(task.id))}>
-                                          Delete
-                                      </Button>
+                                      isMobile ? (
+                                        <Tooltip title="Delete">
+                                            <IconButton size="small" color="error" onClick={() => onDelete(String(task.id))}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                      ) : (
+                                        <Button size="small" color="error" onClick={() => onDelete(String(task.id))}>
+                                            Delete
+                                        </Button>
+                                      )
                                     )}
                                     {hasRole('ROLE_ADMIN') && task.status === 'COMPLETED' && !task.isValidated && onValidate && (
-                                      <Button
-                                        size="small"
-                                        color="success"
-                                        onClick={() => onValidate(String(task.id))}
-                                      >
-                                          Validate
-                                      </Button>
+                                      isMobile ? (
+                                        <Tooltip title="Validate">
+                                            <IconButton size="small" color="success" onClick={() => onValidate(String(task.id))}>
+                                                <CheckCircleOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                      ) : (
+                                        <Button size="small" color="success" onClick={() => onValidate(String(task.id))}>
+                                            Validate
+                                        </Button>
+                                      )
                                     )}
                                 </Box>
                             </TableCell>
-                        </motion.tr>
+                        </MotionTableRow>
                       ))}
                   </TableBody>
               </Table>

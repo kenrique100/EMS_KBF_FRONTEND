@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Button, Grid, TextField, MenuItem, Box } from '@mui/material';
+import { motion } from 'framer-motion';
 import { SalaryPaymentDTO } from '@/types';
 import { salarySchema } from '@/validations/salaryValidation';
 
@@ -28,73 +29,100 @@ const SalaryForm: React.FC<SalaryFormProps> = ({
     });
 
     return (
-      <form onSubmit={handleSubmit(onSubmit)}>
-          <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Employee"
-                    {...register('employeeId')}
-                    error={!!errors.employeeId}
-                    helperText={errors.employeeId?.message}
-                    disabled={isSubmitting}
-                  >
-                      {employees.map((employee) => (
-                        <MenuItem key={employee.id} value={employee.id}>
-                            {employee.name}
-                        </MenuItem>
-                      ))}
-                  </TextField>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+          <form onSubmit={handleSubmit(onSubmit)}>
+              <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                      <motion.div whileHover={{ scale: 1.01 }}>
+                          <TextField
+                            select
+                            fullWidth
+                            label="Employee"
+                            {...register('employeeId')}
+                            error={!!errors.employeeId}
+                            helperText={errors.employeeId?.message}
+                            disabled={isSubmitting}
+                          >
+                              {employees.map((employee) => (
+                                <MenuItem key={employee.id} value={employee.id}>
+                                    {employee.name}
+                                </MenuItem>
+                              ))}
+                          </TextField>
+                      </motion.div>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                      <motion.div whileHover={{ scale: 1.01 }}>
+                          <TextField
+                            fullWidth
+                            label="Amount"
+                            type="number"
+                            inputProps={{ step: "0.01" }}
+                            {...register('amount')}
+                            error={!!errors.amount}
+                            helperText={errors.amount?.message}
+                            disabled={isSubmitting}
+                          />
+                      </motion.div>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                      <motion.div whileHover={{ scale: 1.01 }}>
+                          <TextField
+                            fullWidth
+                            label="Payment Date"
+                            type="date"
+                            InputLabelProps={{ shrink: true }}
+                            {...register('paymentDate')}
+                            error={!!errors.paymentDate}
+                            helperText={errors.paymentDate?.message}
+                            disabled={isSubmitting}
+                          />
+                      </motion.div>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                      <motion.div whileHover={{ scale: 1.01 }}>
+                          <TextField
+                            fullWidth
+                            label="Payment Reference (Optional)"
+                            {...register('paymentReference')}
+                            error={!!errors.paymentReference}
+                            helperText={errors.paymentReference?.message}
+                            disabled={isSubmitting}
+                          />
+                      </motion.div>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                      <Box display="flex" justifyContent="flex-end">
+                          <motion.div
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                disabled={isSubmitting}
+                                sx={{
+                                    minWidth: 120,
+                                    height: 40,
+                                }}
+                              >
+                                  {initialValues?.id ? 'Update Salary' : 'Create Salary'}
+                              </Button>
+                          </motion.div>
+                      </Box>
+                  </Grid>
               </Grid>
-              <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Amount"
-                    type="number"
-                    inputProps={{ step: "0.01" }}
-                    {...register('amount')}
-                    error={!!errors.amount}
-                    helperText={errors.amount?.message}
-                    disabled={isSubmitting}
-                  />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Payment Date"
-                    type="date"
-                    InputLabelProps={{ shrink: true }}
-                    {...register('paymentDate')}
-                    error={!!errors.paymentDate}
-                    helperText={errors.paymentDate?.message}
-                    disabled={isSubmitting}
-                  />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Payment Reference (Optional)"
-                    {...register('paymentReference')}
-                    error={!!errors.paymentReference}
-                    helperText={errors.paymentReference?.message}
-                    disabled={isSubmitting}
-                  />
-              </Grid>
-              <Grid item xs={12}>
-                  <Box display="flex" justifyContent="flex-end">
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        disabled={isSubmitting}
-                      >
-                          {initialValues?.id ? 'Update Salary' : 'Create Salary'}
-                      </Button>
-                  </Box>
-              </Grid>
-          </Grid>
-      </form>
+          </form>
+      </motion.div>
     );
 };
 

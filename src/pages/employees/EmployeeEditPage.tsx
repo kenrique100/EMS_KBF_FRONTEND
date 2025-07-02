@@ -35,16 +35,12 @@ const EmployeeEditPage: React.FC = () => {
     fetchEmployee();
   }, [id, navigate]);
 
-  const handleSubmit = async (
-    employeeData: EmployeeDTO,
-    profilePicture?: File,
-    document?: File
-  ) => {
+  const handleSubmit = async (employeeData: EmployeeDTO) => {
     if (!id || !employee) return;
 
     setIsSubmitting(true);
     try {
-      await updateEmployee(Number(id), employeeData, profilePicture, document);
+      await updateEmployee(Number(id), employeeData);
       notify('Employee updated successfully', 'success');
       navigate(`/employees/${id}`);
     } catch (error) {

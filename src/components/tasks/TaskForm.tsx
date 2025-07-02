@@ -2,7 +2,6 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
-    Button,
     Grid,
     TextField,
     MenuItem,
@@ -11,6 +10,7 @@ import {
     Typography,
     useTheme,
     useMediaQuery,
+    Button
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { TaskDTO } from '@/types';
@@ -27,7 +27,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                                                initialValues,
                                                onSubmit,
                                                isSubmitting,
-                                               employees,
+                                               employees
                                            }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -35,10 +35,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors }
     } = useForm<TaskDTO>({
         resolver: yupResolver(taskSchema),
-        defaultValues: initialValues,
+        defaultValues: initialValues
     });
 
     return (
@@ -49,10 +49,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
         transition={{ duration: 0.5 }}
       >
           <Paper elevation={3} sx={{ p: isMobile ? 2 : 4, borderRadius: 3 }}>
-              <Typography variant="h6" mb={2}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   {initialValues ? 'Edit Task' : 'Create Task'}
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                   <Grid item xs={12}>
                       <TextField
                         fullWidth
@@ -65,15 +65,15 @@ const TaskForm: React.FC<TaskFormProps> = ({
                   <Grid item xs={12}>
                       <TextField
                         fullWidth
-                        label="Description"
                         multiline
                         rows={4}
+                        label="Description"
                         {...register('description')}
                         error={!!errors.description}
                         helperText={errors.description?.message}
                       />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} md={6}>
                       <TextField
                         select
                         fullWidth
@@ -82,14 +82,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         error={!!errors.employeeId}
                         helperText={errors.employeeId?.message}
                       >
-                          {employees.map((employee) => (
-                            <MenuItem key={employee.id} value={employee.id}>
-                                {employee.name}
+                          {employees.map((emp) => (
+                            <MenuItem key={emp.id} value={emp.id}>
+                                {emp.name}
                             </MenuItem>
                           ))}
                       </TextField>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Deadline"
@@ -100,7 +100,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
                         helperText={errors.deadline?.message}
                       />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
                         label="Expected Hours"

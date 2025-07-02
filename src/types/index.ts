@@ -1,5 +1,5 @@
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'STOPPED' | 'CANCELLED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 
@@ -27,6 +27,7 @@ export interface UserResponse {
   updatedAt?: string;
   phoneNumber?: string;
   documentPath?: string;
+  nationalId?: string;
 }
 
 export interface LoginRequest {
@@ -64,6 +65,14 @@ export interface Employee {
   statusHistory?: EmployeeStatusHistoryDTO[];
   createdAt: string;
   updatedAt: string;
+  nationalId: string;
+  password?: string;
+  workingDaysCount?: number;
+  lastProductivityResetDate?: string;
+  currentPeriodStartDate?: string;
+  totalProductiveDays?: number;
+  lastProductivityUpdate?: string;
+  profilePictureThumbnailPath?: string;
 }
 
 export interface EmployeeDTO {
@@ -81,6 +90,9 @@ export interface EmployeeDTO {
   statusExpiration?: string;
   createdAt: string;
   updatedAt: string;
+  nationalId: string;
+  totalHoursWorkedLast30Days?: number;
+  suspensionDuration?: string;
 }
 
 export interface EmployeeStatusUpdateDTO {
@@ -121,6 +133,9 @@ export interface EmployeeProfileDTO {
   tasks: TaskDTO[];
   createdAt: string;
   updatedAt: string;
+  nationalId: string;
+  profilePictureUrl?: string;
+  profilePictureThumbnailUrl?: string;
 }
 
 export interface EmployeeUpdateDTO {
@@ -133,6 +148,7 @@ export interface EmployeeUpdateDTO {
   dateOfEmployment?: string;
   password?: string;
   status?: EmployeeStatus;
+  nationalId?: string;
 }
 
 export interface Task {
@@ -224,7 +240,6 @@ export interface TaskValidationDTO {
   approve: boolean;
 }
 
-// In your types file (e.g., src/types/index.ts)
 export interface SalaryReceiptDTO {
   receiptNumber: string;
   issueDate: string;
@@ -233,12 +248,14 @@ export interface SalaryReceiptDTO {
     name: string;
     department: string;
     employmentDate: string;
+    position?: string;
   };
   salary: {
     amount: number;
     paymentDate: string;
     paymentReference: string;
     status: string;
+    paymentMethod?: string;
   };
   tasks?: Array<{
     title: string;
@@ -253,4 +270,43 @@ export interface SalaryReceiptDTO {
     overallProductivity: number;
     workingDays: number;
   };
+}
+
+export interface ProfilePictureUploadDTO {
+  profilePicture: File;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface EmployeeInfoDTO {
+  id: number;
+  name: string;
+  department: string;
+  position?: string;
+  employmentDate: string;
+}
+
+export interface SalaryInfoDTO {
+  amount: number;
+  paymentDate: string;
+  paymentReference: string;
+  status: string;
+  paymentMethod?: string;
+}
+
+export interface TaskProductivityDTO {
+  title: string;
+  expectedHours: number;
+  actualHours: number;
+  completionRate: number;
+  status: string;
+}
+
+export interface ProductivitySummaryDTO {
+  totalExpectedHours: number;
+  totalActualHours: number;
+  overallProductivity: number;
+  workingDays: number;
 }

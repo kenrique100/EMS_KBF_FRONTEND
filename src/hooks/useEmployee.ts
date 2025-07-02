@@ -65,5 +65,9 @@ export const toEmployeeDTO = (emp: EmployeeDTO): EmployeeDTO => ({
   profilePicturePath: emp.profilePicturePath,
   documentPath: emp.documentPath,
   createdAt: emp.createdAt,
-  updatedAt: emp.updatedAt
+  updatedAt: emp.updatedAt,
+  nationalId: emp.nationalId,
+  totalHoursWorkedLast30Days: emp.totalHoursWorkedLast30Days,
+  suspensionDuration: emp.suspensionDuration,
+  statusExpiration: emp.statusExpiration
 });

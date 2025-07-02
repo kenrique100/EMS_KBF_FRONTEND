@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box } from '@mui/material';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { useAuthStore } from '@/store/authStore';
 import Loading from '@/components/common/Loading';
+import { Outlet } from 'react-router-dom';
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC = () => {
   const { isAuthenticated, initialized } = useAuthStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   if (!initialized) {
     return <Loading fullScreen />;
@@ -21,12 +23,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   }
 
   return (
-    <Box display="flex" minHeight="100vh">
-      <Sidebar />
-      <Box flexGrow={1} display="flex" flexDirection="column">
-        <Navbar />
-        <Box component="main" flexGrow={1} p={3}>
-          {children}
+    <Box display="flex" minHeight="100vh" sx={{ backgroundColor: 'background.default' }}>
+      <Sidebar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
+      <Box
+        flexGrow={1}
+        display="flex"
+        flexDirection="column"
+        sx={{
+          marginLeft: { sm: '240px' },
+          width: { sm: `calc(100% - 240px)` }
+        }}
+      >
+        <Navbar handleDrawerToggle={handleDrawerToggle} />
+        <Box
+          component="main"
+          flexGrow={1}
+          p={{ xs: 2, md: 3 }}
+        >
+          <Outlet />
         </Box>
       </Box>
     </Box>

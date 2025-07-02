@@ -1,4 +1,3 @@
-// src/routes/ProtectedRoute.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import LoadingScreen from '@/components/common/LoadingScreen';
@@ -22,11 +21,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles = [] })
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles.length > 0 && !roles.some(role => user?.roles.includes(role))) {
+  if (roles.length > 0 && !roles.some(role => user?.roles?.includes(role))) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  return children ? <>{children}</> : <Outlet />;
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;
