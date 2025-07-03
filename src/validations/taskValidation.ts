@@ -29,7 +29,15 @@ export const taskSchema: yup.ObjectSchema<TaskDTO> = yup.object({
   employeeName: yup.string().optional(),
   status: yup
     .string()
-    .oneOf(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'UNCOMPLETED', 'CANCELLED'])
+    .oneOf([
+      'PENDING',
+      'IN_PROGRESS',
+      'STOPPED',
+      'SUBMITTED',
+      'COMPLETED',
+      'UNCOMPLETED',
+      'CANCELLED',
+    ])
     .optional(),
   expectedHours: yup
     .number()
@@ -46,4 +54,5 @@ export const taskSchema: yup.ObjectSchema<TaskDTO> = yup.object({
   updatedAt: yup.string().optional(),
   isValidated: yup.boolean().optional(),
   validationTime: yup.string().optional(),
+  submitted: yup.boolean().optional(),
 });

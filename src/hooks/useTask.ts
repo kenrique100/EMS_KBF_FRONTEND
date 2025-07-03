@@ -8,11 +8,15 @@ import {
   updateTaskStatus as updateTaskStatusApi,
   validateTask as validateTaskApi
 } from '@/api/tasks';
-import { Task, TaskDTO, TaskValidationDTO } from '@/types';
+import { Task, TaskDTO, TaskActionDTO, TaskValidationDTO } from '@/types';
 
 const mapTaskDTOtoTask = (dto: TaskDTO): Task => {
+  if (!dto.id) {
+    throw new Error('Task ID is required');
+  }
+
   return {
-    id: dto.id || 0,
+    id: dto.id,
     title: dto.title,
     description: dto.description || '',
     deadline: dto.deadline,
@@ -27,6 +31,7 @@ const mapTaskDTOtoTask = (dto: TaskDTO): Task => {
     lastResumeTime: dto.lastResumeTime,
     isValidated: dto.isValidated || false,
     validationTime: dto.validationTime,
+    submitted: dto.submitted || false,
     createdAt: dto.createdAt || new Date().toISOString(),
     updatedAt: dto.updatedAt || new Date().toISOString(),
   };
@@ -62,22 +67,24 @@ const useTask = () => {
       return mapped;
     } catch (err) {
       setError('Failed to update task');
+      notify('Failed to update task', 'error');
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updateTaskStatus = useCallback(async (taskId: number, action: string) => {
+  const updateTaskStatus = useCallback(async (actionDTO: TaskActionDTO) => {
     setLoading(true);
     try {
-      const updatedTaskDTO = await updateTaskStatusApi(taskId, action);
+      const updatedTaskDTO = await updateTaskStatusApi(actionDTO);
       const mapped = mapTaskDTOtoTask(updatedTaskDTO);
       setTask(mapped);
       setError(null);
       return mapped;
     } catch (err) {
       setError('Failed to update task status');
+      notify('Failed to update task status', 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -94,6 +101,7 @@ const useTask = () => {
       return mapped;
     } catch (err) {
       setError('Failed to validate task');
+      notify('Failed to validate task', 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -108,6 +116,7 @@ const useTask = () => {
       setError(null);
     } catch (err) {
       setError('Failed to delete task');
+      notify('Failed to delete task', 'error');
       throw err;
     } finally {
       setLoading(false);

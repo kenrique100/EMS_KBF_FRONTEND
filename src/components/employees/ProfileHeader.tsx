@@ -1,8 +1,18 @@
-// src/components/employees/ProfileHeader.tsx
-import { Box, Typography, Chip, Button, Skeleton, useTheme, useMediaQuery } from '@mui/material';
+// src/components/profile/ProfileHeader.tsx
+import {
+  Box,
+  Typography,
+  Chip,
+  Button,
+  Skeleton,
+  useTheme,
+  useMediaQuery,
+  Avatar,
+} from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import EditableAvatar from '@/components/common/EditableAvatar';
 import { motion } from 'framer-motion';
+import { deleteProfilePicture, getProfilePictureUrl } from '@/api/profilePictures';
 
 interface ProfileHeaderProps {
   name?: string;
@@ -14,6 +24,8 @@ interface ProfileHeaderProps {
   onStatusUpdate?: () => void;
   onProfilePictureUpdate: (file: File) => Promise<void>;
   loading?: boolean;
+  employeeId?: number;
+  editable?: boolean;
 }
 
 const MotionBox = motion(Box);
@@ -27,17 +39,23 @@ const ProfileHeader = ({
                          onDelete = () => {},
                          onStatusUpdate = () => {},
                          onProfilePictureUpdate,
-                         loading = false
+                         loading = false,
+                         employeeId,
+                         editable = false,
                        }: ProfileHeaderProps) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getStatusColor = () => {
     switch (status) {
-      case 'ACTIVE': return 'success';
-      case 'ON_LEAVE': return 'warning';
-      case 'TERMINATED': return 'error';
-      default: return 'default';
+      case 'ACTIVE':
+        return 'success';
+      case 'ON_LEAVE':
+        return 'warning';
+      case 'TERMINATED':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -60,6 +78,8 @@ const ProfileHeader = ({
     );
   }
 
+  const showAvatar = typeof employeeId === 'number';
+
   return (
     <MotionBox
       initial={{ opacity: 0, y: 15 }}
@@ -73,20 +93,40 @@ const ProfileHeader = ({
         px: 2,
       }}
     >
-      <EditableAvatar
-        src={profileUrl}
-        alt={name}
-        onChange={onProfilePictureUpdate}
-        size={isSmall ? 80 : 120}
-        sx={{
-          mb: 2,
-          border: `3px solid ${theme.palette.background.paper}`,
-          boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-          cursor: 'pointer',
-          transition: 'transform 0.3s ease',
-          '&:hover': { transform: 'scale(1.05)' },
-        }}
-      />
+      {showAvatar ? (
+        <EditableAvatar
+          employeeId={employeeId}
+          profileUrl={profileUrl ? getProfilePictureUrl(employeeId) : undefined}
+          onChange={onProfilePictureUpdate}
+          onDelete={async () => {
+            await deleteProfilePicture(employeeId);
+            onProfilePictureUpdate?.(new File([], ''));
+          }}
+          size={isSmall ? 80 : 120}
+          editable={editable}
+          fallbackName={name}
+          sx={{
+            mb: 2,
+            border: `3px solid ${theme.palette.background.paper}`,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+            transition: 'transform 0.3s ease',
+            '&:hover': { transform: 'scale(1.05)' },
+          }}
+        />
+      ) : (
+        <Avatar
+          sx={{
+            width: isSmall ? 80 : 120,
+            height: isSmall ? 80 : 120,
+            mb: 2,
+            fontSize: (isSmall ? 80 : 120) * 0.4,
+            bgcolor: 'primary.main',
+          }}
+        >
+          {name.charAt(0).toUpperCase()}
+        </Avatar>
+      )}
 
       <Typography
         variant={isSmall ? 'h6' : 'h4'}

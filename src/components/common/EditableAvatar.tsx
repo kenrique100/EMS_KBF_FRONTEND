@@ -1,102 +1,175 @@
-// src/components/common/EditableAvatar.tsx
-import React, { useState } from 'react';
-import { Avatar, Box, IconButton, SxProps, Theme } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import {
+  Avatar,
+  Box,
+  IconButton,
+  Skeleton,
+  SxProps,
+  Theme,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
-import { styled } from '@mui/material/styles';
+import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  getProfilePicture,
+  uploadProfilePicture,
+  deleteProfilePicture,
+} from '@/api/profilePictures';
 
-interface EditableAvatarProps {
-  src?: string;
-  alt: string;
-  onChange: (file: File) => Promise<void>;
-  size: number;
+export interface EditableAvatarProps {
+  employeeId: number;
+  size?: number;
+  editable?: boolean;
+  onUpdate?: () => void;
+  fallbackName?: string;
+  profileUrl?: string;
+  onChange?: (file: File) => Promise<void>;
+  onDelete?: () => Promise<void>;
   sx?: SxProps<Theme>;
 }
 
-const Input = styled('input')({
-  display: 'none',
-});
-
 const EditableAvatar: React.FC<EditableAvatarProps> = ({
-                                                         src,
-                                                         alt,
+                                                         employeeId,
+                                                         size = 120,
+                                                         editable = false,
+                                                         onUpdate,
+                                                         fallbackName = 'U',
+                                                         profileUrl,
                                                          onChange,
-                                                         size,
-                                                         sx
+                                                         onDelete,
+                                                         sx = {},
                                                        }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(profileUrl);
+  const [isLoading, setIsLoading] = useState(!profileUrl);
   const [isUploading, setIsUploading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (profileUrl) {
+      setImageUrl(profileUrl);
+      setIsLoading(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const url = await getProfilePicture(employeeId);
+        if (isMounted) {
+          setImageUrl(url || undefined);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setImageUrl(undefined);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+      if (imageUrl && !profileUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [employeeId, profileUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      try {
-        await onChange(e.target.files[0]);
-      } finally {
-        setIsUploading(false);
+    if (!e.target.files?.length) return;
+
+    const file = e.target.files[0];
+    setIsUploading(true);
+    try {
+      if (onChange) {
+        await onChange(file);
+      } else {
+        await uploadProfilePicture(employeeId, file);
+        const newUrl = await getProfilePicture(employeeId);
+        setImageUrl(newUrl || undefined);
       }
+      onUpdate?.();
+    } catch (error) {
+      console.error('Failed to upload profile picture:', error);
+    } finally {
+      setIsUploading(false);
+      setAnchorEl(null);
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      if (onDelete) {
+        await onDelete();
+      } else {
+        await deleteProfilePicture(employeeId);
+        setImageUrl(undefined);
+      }
+      onUpdate?.();
+    } catch (error) {
+      console.error('Failed to delete profile picture:', error);
+    } finally {
+      setAnchorEl(null);
+    }
+  };
+
+  if (isLoading) {
+    return <Skeleton variant="circular" width={size} height={size} />;
+  }
+
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        width: size,
-        height: size,
-        ...sx,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <Box sx={{ position: 'relative', width: size, height: size, ...sx }}>
       <Avatar
-        src={src}
-        alt={alt}
+        src={imageUrl}
+        alt={fallbackName}
         sx={{
           width: '100%',
           height: '100%',
-          transition: 'opacity 0.3s',
-          opacity: isHovered ? 0.7 : 1,
+          fontSize: size * 0.4,
+          bgcolor: imageUrl ? 'transparent' : 'primary.main',
         }}
       >
-        {alt.charAt(0)}
+        {!imageUrl && fallbackName.charAt(0).toUpperCase()}
       </Avatar>
 
-      {isHovered && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <label htmlFor="avatar-upload">
-            <Input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={isUploading}
-            />
-            <IconButton
-              color="primary"
-              component="span"
-              disabled={isUploading}
-              sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                },
-              }}
-            >
-              <EditIcon />
-            </IconButton>
-          </label>
-        </Box>
+      {editable && (
+        <>
+          <IconButton
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              bgcolor: 'background.paper',
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+            disabled={isUploading}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+          >
+            <MenuItem component="label" disabled={isUploading}>
+              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+              Upload
+              <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+            </MenuItem>
+            <MenuItem onClick={handleDelete} disabled={isUploading}>
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+              Delete
+            </MenuItem>
+          </Menu>
+        </>
       )}
     </Box>
   );

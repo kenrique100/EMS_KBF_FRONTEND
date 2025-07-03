@@ -1,3 +1,4 @@
+// src/pages/tasks/TasksPage.tsx
 import React, { useEffect, useState } from 'react';
 import { Button, Container } from '@mui/material';
 import TaskList from '@/components/tasks/TaskList';
@@ -7,46 +8,49 @@ import { Task, TaskDTO } from '@/types';
 import Loading from '@/components/common/Loading';
 import { useNavigate } from 'react-router-dom';
 import { getTasks } from '@/api/tasks';
-import ValidationDialog from '@/components/tasks/ValidationDialog';
+import { notify } from '@/store/notificationService';
+
+const mapTaskDTOtoTask = (dto: TaskDTO): Task => {
+  if (!dto.id) {
+    throw new Error('Task ID is required');
+  }
+
+  return {
+    id: dto.id,
+    title: dto.title,
+    description: dto.description || '',
+    deadline: dto.deadline,
+    employeeId: dto.employeeId,
+    employeeName: dto.employeeName || '',
+    status: dto.status || 'PENDING',
+    expectedHours: dto.expectedHours || 0,
+    actualHours: dto.actualHours || 0,
+    totalWorkedMinutes: dto.totalWorkedMinutes || 0,
+    startTime: dto.startTime,
+    stopTime: dto.stopTime,
+    lastResumeTime: dto.lastResumeTime,
+    isValidated: dto.isValidated || false,
+    validationTime: dto.validationTime,
+    submitted: dto.submitted || false,
+    createdAt: dto.createdAt || new Date().toISOString(),
+    updatedAt: dto.updatedAt || new Date().toISOString(),
+  };
+};
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [validationDialogOpen, setValidationDialogOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { hasRole } = useAuthStore();
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const data = await getTasks(); // returns TaskDTO[]
-        // Convert TaskDTO[] to Task[]
-        const mappedTasks: Task[] = data
-          .filter((t): t is Required<TaskDTO> => typeof t.id === 'number' && typeof t.expectedHours === 'number' && !!t.createdAt && !!t.updatedAt)
-          .map((t) => ({
-            id: t.id!,
-            title: t.title,
-            description: t.description,
-            deadline: t.deadline,
-            employeeId: t.employeeId,
-            employeeName: t.employeeName,
-            status: t.status ?? 'PENDING',
-            expectedHours: t.expectedHours!,
-            actualHours: t.actualHours,
-            totalWorkedMinutes: t.totalWorkedMinutes,
-            startTime: t.startTime,
-            stopTime: t.stopTime,
-            lastResumeTime: t.lastResumeTime,
-            isValidated: t.isValidated,
-            validationTime: t.validationTime,
-            createdAt: t.createdAt!,
-            updatedAt: t.updatedAt!
-          }));
-
+        const data = await getTasks();
+        const mappedTasks = data.map(mapTaskDTOtoTask);
         setTasks(mappedTasks);
       } catch (error) {
-        console.error('Failed to fetch tasks:', error);
+        notify('Failed to fetch tasks', 'error');
       } finally {
         setLoading(false);
       }
@@ -65,26 +69,6 @@ const TasksPage: React.FC = () => {
 
   const handleEdit = (id: string) => {
     navigate(`/tasks/${id}/edit`);
-  };
-
-  const handleDelete = (id: string) => {
-    console.log('Delete task', id);
-  };
-
-  const handleValidateClick = (id: string) => {
-    setSelectedTaskId(id);
-    setValidationDialogOpen(true);
-  };
-
-  const handleValidate = async (approve: boolean) => {
-    if (!selectedTaskId) return;
-
-    try {
-      console.log(`Validating task ${selectedTaskId}: ${approve ? 'approve' : 'reject'}`);
-      setValidationDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to validate task:', error);
-    }
   };
 
   if (loading) {
@@ -112,17 +96,11 @@ const TasksPage: React.FC = () => {
         tasks={tasks}
         onViewDetails={handleViewDetails}
         onEdit={hasRole('ROLE_ADMIN') ? handleEdit : undefined}
-        onDelete={hasRole('ROLE_ADMIN') ? handleDelete : undefined}
-        onValidate={hasRole('ROLE_ADMIN') ? handleValidateClick : undefined}
-      />
-
-      <ValidationDialog
-        open={validationDialogOpen}
-        onClose={() => setValidationDialogOpen(false)}
-        onConfirm={handleValidate}
+        onDelete={hasRole('ROLE_ADMIN') ? (id) => console.log('Delete', id) : undefined}
       />
     </Container>
   );
 };
+
 
 export default TasksPage;

@@ -9,8 +9,8 @@ import ValidationDialog from '@/components/tasks/ValidationDialog';
 import useTask from '@/hooks/useTask';
 import { formatDate } from '@/utils/formatters';
 import { notify } from '@/store/notificationService';
-import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
+import { ActionType } from '@/types';
 
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,11 +23,9 @@ const TaskDetailPage: React.FC = () => {
     loading,
     error
   } = useTask();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationDialogOpen, setValidationDialogOpen] = useState(false);
   const { hasRole } = useAuthStore();
-  const MotionCard = motion(Card);
-  const MotionBox = motion(Box);
 
   useEffect(() => {
     if (id) {
@@ -41,12 +39,16 @@ const TaskDetailPage: React.FC = () => {
     }
   }, [error]);
 
-  const handleStatusChange = async (action: string) => {
+  const handleStatusChange = async (action: ActionType) => {
     setIsSubmitting(true);
     try {
       if (id) {
-        await updateTaskStatus(Number(id), action);
+        await updateTaskStatus({
+          taskId: Number(id),
+          action
+        });
         notify('Task status updated successfully', 'success');
+        await fetchTaskById(Number(id));
       }
     } catch (err) {
       notify('Failed to update task status', 'error');
@@ -64,6 +66,7 @@ const TaskDetailPage: React.FC = () => {
           approve
         });
         notify(`Task ${approve ? 'approved' : 'rejected'}`, 'success');
+        await fetchTaskById(Number(id));
       }
     } catch (err) {
       notify('Failed to validate task', 'error');
@@ -87,25 +90,19 @@ const TaskDetailPage: React.FC = () => {
           { label: task?.title || 'Details', path: `/tasks/${id}` }
         ]}
         action={
-          <motion.div whileHover={{ scale: 1.05 }}>
-            <Button variant="contained" onClick={() => navigate(`/tasks/${id}/edit`)}>
+          hasRole('ROLE_ADMIN') && (
+            <Button
+              variant="contained"
+              onClick={() => navigate(`/tasks/${id}/edit`)}
+            >
               Edit
             </Button>
-          </motion.div>
+          )
         }
       />
 
       {task && (
-        <MotionCard
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          sx={{
-            mt: 2,
-            boxShadow: 3,
-            borderRadius: 3,
-          }}
-        >
+        <Card sx={{ mt: 2, boxShadow: 3, borderRadius: 3 }}>
           <CardContent>
             <TaskStatus
               task={task}
@@ -113,7 +110,7 @@ const TaskDetailPage: React.FC = () => {
               isSubmitting={isSubmitting}
             />
 
-            {hasRole('ROLE_ADMIN') && task.status === 'COMPLETED' && !task.isValidated && (
+            {hasRole('ROLE_ADMIN') && task.status === 'IN_PROGRESS' && task.submitted && (
               <Box mt={2}>
                 <Button
                   variant="contained"
@@ -130,11 +127,7 @@ const TaskDetailPage: React.FC = () => {
 
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <MotionBox
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
+                <Box>
                   <Typography variant="h6" gutterBottom>
                     Task Information
                   </Typography>
@@ -150,35 +143,43 @@ const TaskDetailPage: React.FC = () => {
                     <Typography variant="subtitle2">Deadline</Typography>
                     <Typography>{formatDate(task.deadline)}</Typography>
                   </Box>
-                </MotionBox>
+                </Box>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <MotionBox
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
+                <Box>
                   <Typography variant="h6" gutterBottom>
                     Assignment Details
                   </Typography>
                   <Box mb={2}>
                     <Typography variant="subtitle2">Assigned To</Typography>
-                    <Typography>{task.employeeName}</Typography>
+                    <Typography>{task.employeeName || 'N/A'}</Typography>
                   </Box>
                   <Box mb={2}>
                     <Typography variant="subtitle2">Expected Hours</Typography>
-                    <Typography>{task.expectedHours}</Typography>
+                    <Typography>{task.expectedHours || 'N/A'}</Typography>
                   </Box>
                   <Box mb={2}>
                     <Typography variant="subtitle2">Actual Hours</Typography>
                     <Typography>{task.actualHours || 'N/A'}</Typography>
                   </Box>
-                </MotionBox>
+                  {task.startTime && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle2">Start Time</Typography>
+                      <Typography>{formatDate(task.startTime)}</Typography>
+                    </Box>
+                  )}
+                  {task.stopTime && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle2">Stop Time</Typography>
+                      <Typography>{formatDate(task.stopTime)}</Typography>
+                    </Box>
+                  )}
+                </Box>
               </Grid>
             </Grid>
           </CardContent>
-        </MotionCard>
+        </Card>
       )}
 
       <ValidationDialog

@@ -1,7 +1,8 @@
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'CANCELLED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED' | 'SUBMITTED' | 'CANCELLED' | 'STOPPED';
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
+export type ActionType = 'START' | 'STOP' | 'CONTINUE' | 'COMPLETE' | 'SUBMIT' | 'CANCEL';
 
 export type Department =
   'ADMINISTRATION' |
@@ -167,13 +168,14 @@ export interface Task {
   lastResumeTime?: string;
   isValidated?: boolean;
   validationTime?: string;
+  submitted?: boolean | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface TaskActionDTO {
   taskId: number;
-  action: 'START' | 'STOP' | 'CONTINUE' | 'COMPLETE';
+  action: ActionType;
 }
 
 export interface TaskDTO {
@@ -190,11 +192,13 @@ export interface TaskDTO {
   startTime?: string;
   stopTime?: string;
   lastResumeTime?: string;
-  createdAt?: string;
-  updatedAt?: string;
   isValidated?: boolean;
   validationTime?: string;
+  submitted?: boolean | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
 
 export interface SalaryPayment {
   id: number;

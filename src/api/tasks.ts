@@ -1,6 +1,7 @@
 // src/api/tasks.ts
+// src/api/tasks.ts
 import apiClient from '../utils/apiClient';
-import { TaskDTO, ProductivityStatsDTO, TaskValidationDTO } from '@/types';
+import { TaskDTO, ProductivityStatsDTO, TaskValidationDTO, TaskActionDTO } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 
 export const getTasks = async (): Promise<TaskDTO[]> => {
@@ -28,8 +29,8 @@ export const updateTask = async (id: number, task: TaskDTO): Promise<TaskDTO> =>
     return response.data;
 };
 
-export const updateTaskStatus = async (taskId: number, action: string): Promise<TaskDTO> => {
-    const response = await apiClient.put('/tasks/status', { taskId, action });
+export const updateTaskStatus = async (actionDTO: TaskActionDTO): Promise<TaskDTO> => {
+    const response = await apiClient.put('/tasks/status', actionDTO);
     return response.data;
 };
 

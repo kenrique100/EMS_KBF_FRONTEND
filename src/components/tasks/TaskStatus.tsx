@@ -1,27 +1,28 @@
+// src/components/tasks/TaskStatus.tsx
 import React from 'react';
 import { Button, ButtonGroup, Typography, Box, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
-import { TaskDTO } from '@/types';
+import { TaskDTO, ActionType } from '@/types';
 
 interface TaskStatusProps {
   task: TaskDTO;
-  onStatusChange: (action: string) => void;
+  onStatusChange: (action: ActionType) => void;
   isSubmitting: boolean;
 }
 
 const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitting }) => {
   const theme = useTheme();
 
-  const getAvailableActions = () => {
+  const getAvailableActions = (): ActionType[] => {
     switch (task.status) {
       case 'PENDING':
-        return ['START'];
+        return ['START', 'CANCEL'];
       case 'IN_PROGRESS':
-        return task.stopTime ? ['CONTINUE', 'COMPLETE'] : ['STOP', 'COMPLETE'];
-      case 'COMPLETED':
-        return [];
+        return task.submitted ? [] : ['STOP', 'SUBMIT', 'CANCEL'];
+      case 'STOPPED':
+        return ['CONTINUE', 'SUBMIT', 'CANCEL'];
       case 'UNCOMPLETED':
-        return ['START'];
+        return ['START', 'CANCEL'];
       default:
         return [];
     }
@@ -33,6 +34,9 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
     <Box mb={3}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
         Task Status: <span style={{ color: theme.palette.primary.main }}>{task.status}</span>
+        {task.submitted && task.status === 'IN_PROGRESS' && (
+          <span style={{ color: theme.palette.info.main, marginLeft: '8px' }}>(Submitted)</span>
+        )}
       </Typography>
 
       {availableActions.length > 0 && (
@@ -46,8 +50,10 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ task, onStatusChange, isSubmitt
               <Button
                 variant="contained"
                 color={
-                  action === 'COMPLETE' ? 'success' :
-                    action === 'STOP' ? 'warning' : 'primary'
+                  action === 'SUBMIT' ? 'info' :
+                    action === 'STOP' ? 'warning' :
+                      action === 'CANCEL' ? 'error' :
+                        'primary'
                 }
                 onClick={() => onStatusChange(action)}
                 disabled={isSubmitting}

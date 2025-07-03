@@ -35,15 +35,16 @@ interface TaskListProps {
 }
 
 const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-        case 'COMPLETED': return 'success';
-        case 'IN_PROGRESS': return 'primary';
-        case 'PENDING': return 'default';
-        case 'STOPPED': return 'warning';
-        case 'UNCOMPLETED': return 'warning';
-        case 'CANCELLED': return 'error';
-        default: return 'default';
-    }
+  switch (status) {
+    case 'COMPLETED': return 'success';
+    case 'IN_PROGRESS': return 'primary';
+    case 'STOPPED': return 'warning';
+    case 'SUBMITTED': return 'info';
+    case 'PENDING': return 'default';
+    case 'UNCOMPLETED': return 'warning';
+    case 'CANCELLED': return 'error';
+    default: return 'default';
+  }
 };
 
 const MotionTableRow = motion(TableRow);
@@ -163,8 +164,8 @@ const TaskList: React.FC<TaskListProps> = ({
                                         </Button>
                                       )
                                     )}
-                                    {hasRole('ROLE_ADMIN') && task.status === 'COMPLETED' && !task.isValidated && onValidate && (
-                                      isMobile ? (
+                                  {hasRole('ROLE_ADMIN') && task.status === 'IN_PROGRESS' && task.submitted && onValidate && (
+                                    isMobile ? (
                                         <Tooltip title="Validate">
                                             <IconButton size="small" color="success" onClick={() => onValidate(String(task.id))}>
                                                 <CheckCircleOutlineIcon fontSize="small" />
