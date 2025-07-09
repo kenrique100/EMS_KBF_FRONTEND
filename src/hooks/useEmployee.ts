@@ -1,4 +1,3 @@
-// src/hooks/useEmployee.ts
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEmployeeById, getOwnProfile } from '@/api/employees';
@@ -53,21 +52,10 @@ export const useOwnProfile = () => {
 };
 
 export const toEmployeeDTO = (emp: EmployeeDTO): EmployeeDTO => ({
-  id: emp.id,
-  username: emp.username,
-  name: emp.name,
-  email: emp.email,
-  phoneNumber: emp.phoneNumber,
-  department: emp.department,
-  dateOfEmployment: emp.dateOfEmployment,
+  ...emp,
   password: '',
-  status: emp.status,
-  profilePicturePath: emp.profilePicturePath,
-  documentPath: emp.documentPath,
-  createdAt: emp.createdAt,
-  updatedAt: emp.updatedAt,
-  nationalId: emp.nationalId,
-  totalHoursWorkedLast30Days: emp.totalHoursWorkedLast30Days,
+  status: emp.status || 'ACTIVE',
+  totalHoursWorkedLast30Days: emp.totalHoursWorkedLast30Days || 0,
   suspensionDuration: emp.suspensionDuration,
-  statusExpiration: emp.statusExpiration
+  statusExpiration: emp.statusExpiration,
 });

@@ -3,18 +3,15 @@ import React from 'react';
 import { Button, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
 import EmployeeList from '@/components/employees/EmployeeList';
 import PageHeader from '@/components/common/PageHeader';
 import Loading from '@/components/common/Loading';
-
 import { useAuthStore } from '@/store/authStore';
 import { notify } from '@/store/notificationService';
-
 import { getEmployees, deleteEmployee } from '@/api/employees';
-import { Employee, EmployeeDTO } from '@/types';
+import { EmployeeDTO, Employee } from '@/types';
 
-const mapDTOToEmployee = (dto: EmployeeDTO): Employee => ({
+const mapToEmployee = (dto: EmployeeDTO): Employee => ({
   id: dto.id,
   username: dto.username,
   name: dto.name,
@@ -22,52 +19,40 @@ const mapDTOToEmployee = (dto: EmployeeDTO): Employee => ({
   phoneNumber: dto.phoneNumber,
   department: dto.department,
   dateOfEmployment: dto.dateOfEmployment,
-  status: dto.status ?? 'ACTIVE',
+  status: dto.status || 'ACTIVE',
   profilePicturePath: dto.profilePicturePath,
   documentPath: dto.documentPath,
-  statusChangeTimestamp: undefined,
-  totalHoursWorkedLast30Days: dto.totalHoursWorkedLast30Days ?? 0,
+  nationalId: dto.nationalId,
+  createdAt: dto.createdAt || new Date().toISOString(),
+  updatedAt: dto.updatedAt || new Date().toISOString(),
+  totalHoursWorkedLast30Days: dto.totalHoursWorkedLast30Days || 0,
   statusExpiration: dto.statusExpiration,
   suspensionDuration: dto.suspensionDuration,
-  terminationTimestamp: undefined,
-  statusHistory: [],
-  createdAt: dto.createdAt,
-  updatedAt: dto.updatedAt,
-  nationalId: dto.nationalId, // Added missing field
-  password: dto.password,
   workingDaysCount: 0,
-  lastProductivityResetDate: undefined,
-  currentPeriodStartDate: undefined,
+  currentPeriodStartDate: new Date().toISOString(),
   totalProductiveDays: 0,
+  statusChangeTimestamp: undefined,
+  terminationTimestamp: undefined,
+  lastProductivityResetDate: undefined,
   lastProductivityUpdate: undefined,
-  profilePictureThumbnailPath: undefined
+  profilePictureThumbnailPath: undefined,
+  statusHistory: [],
 });
 
 const EmployeesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { hasRole } = useAuthStore();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuthStore();
 
-  const {
-    data: employeeDTOs = [],
-    isLoading,
-  } = useQuery<EmployeeDTO[]>({
+  const { data: employees = [], isLoading } = useQuery<EmployeeDTO[]>({
     queryKey: ['employees'],
     queryFn: getEmployees,
   });
 
-  const employees: Employee[] = employeeDTOs.map(mapDTOToEmployee);
-
   const deleteMutation = useMutation({
     mutationFn: deleteEmployee,
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['employees'] }),
-        queryClient.invalidateQueries({ queryKey: ['employeeSalaries'] }),
-        queryClient.invalidateQueries({ queryKey: ['employeeTasks'] }),
-        queryClient.invalidateQueries({ queryKey: ['salaries'] }),
-        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ['employees'] }); // ✅ Await added
       notify('Employee deleted successfully', 'success');
     },
     onError: (error) => {
@@ -80,7 +65,7 @@ const EmployeesPage: React.FC = () => {
   const handleViewDetails = (id: number) => navigate(`/employees/${id}`);
   const handleEdit = (id: number) => navigate(`/employees/${id}/edit`);
   const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this employee and all associated files?')) {
+    if (window.confirm('Are you sure you want to delete this employee?')) {
       deleteMutation.mutate(id);
     }
   };
@@ -105,7 +90,7 @@ const EmployeesPage: React.FC = () => {
       />
 
       <EmployeeList
-        employees={employees}
+        employees={employees.map(mapToEmployee)}
         onViewDetails={handleViewDetails}
         onEdit={hasRole('ROLE_ADMIN') ? handleEdit : undefined}
         onDelete={hasRole('ROLE_ADMIN') ? handleDelete : undefined}

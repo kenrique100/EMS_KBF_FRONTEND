@@ -13,11 +13,12 @@ import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import EditableAvatar from '@/components/common/EditableAvatar';
 import { motion } from 'framer-motion';
 import { deleteProfilePicture, getProfilePictureUrl } from '@/api/profilePictures';
+import { EmployeeStatus } from '@/types';
 
 interface ProfileHeaderProps {
   name?: string;
   department?: string;
-  status?: string;
+  status?: EmployeeStatus;
   profileUrl?: string;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -33,7 +34,7 @@ const MotionBox = motion(Box);
 const ProfileHeader = ({
                          name = '',
                          department = '',
-                         status = '',
+                         status,
                          profileUrl,
                          onEdit = () => {},
                          onDelete = () => {},
@@ -46,7 +47,7 @@ const ProfileHeader = ({
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const getStatusColor = () => {
+  const getStatusColor = (status?: EmployeeStatus) => {
     switch (status) {
       case 'ACTIVE':
         return 'success';
@@ -57,6 +58,11 @@ const ProfileHeader = ({
       default:
         return 'default';
     }
+  };
+
+  const getStatusLabel = (status?: EmployeeStatus) => {
+    if (!status) return 'UNKNOWN';
+    return status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ');
   };
 
   if (loading) {
@@ -143,8 +149,8 @@ const ProfileHeader = ({
       </Typography>
 
       <Chip
-        label={status}
-        color={getStatusColor()}
+        label={getStatusLabel(status)}
+        color={getStatusColor(status)}
         sx={{
           mb: 3,
           fontWeight: 500,

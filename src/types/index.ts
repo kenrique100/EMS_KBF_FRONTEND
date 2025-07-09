@@ -5,14 +5,14 @@ export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 export type ActionType = 'START' | 'STOP' | 'CONTINUE' | 'COMPLETE' | 'SUBMIT' | 'CANCEL';
 
 export type Department =
-  'ADMINISTRATION' |
-  'FISHERY' |
-  'POULTRY' |
-  'RABBITRY' |
-  'CONSTRUCTION' |
-  'CROPS' |
-  'LIVESTOCK' |
-  'FARM_MANAGEMENT';
+  | 'ADMINISTRATION'
+  | 'FISHERY'
+  | 'POULTRY'
+  | 'RABBITRY'
+  | 'CONSTRUCTION'
+  | 'CROPS'
+  | 'LIVESTOCK'
+  | 'FARM_MANAGEMENT';
 
 export interface UserResponse {
   id: number;
@@ -83,15 +83,15 @@ export interface EmployeeDTO {
   password?: string;
   email: string;
   phoneNumber?: string;
+  nationalId: string;
   department: Department;
   dateOfEmployment: string;
-  status: EmployeeStatus;
+  status?: EmployeeStatus;
   profilePicturePath?: string;
   documentPath?: string;
   statusExpiration?: string;
-  createdAt: string;
-  updatedAt: string;
-  nationalId: string;
+  createdAt?: string;
+  updatedAt?: string;
   totalHoursWorkedLast30Days?: number;
   suspensionDuration?: string;
 }
@@ -148,7 +148,6 @@ export interface EmployeeUpdateDTO {
   department?: Department;
   dateOfEmployment?: string;
   password?: string;
-  status?: EmployeeStatus;
   nationalId?: string;
 }
 

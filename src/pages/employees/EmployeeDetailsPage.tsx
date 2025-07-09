@@ -55,6 +55,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ProfileHeader from '@/components/employees/ProfileHeader';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';
 import { useAuthStore } from '@/store/authStore';
+import { EmployeeStatus } from '@/types';
 
 const EmployeeDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -175,7 +176,7 @@ const EmployeeDetailsPage: React.FC = () => {
           <ProfileHeader
             name={employee.name}
             department={employee.department}
-            status={employee.status}
+            status={employee.status as EmployeeStatus || 'ACTIVE'}
             profileUrl={employee.profilePicturePath}
             onEdit={isAdmin ? handleEdit : undefined}
             onDelete={isAdmin ? () => setDeleteDialogOpen(true) : undefined}
@@ -401,7 +402,7 @@ const EmployeeDetailsPage: React.FC = () => {
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
         onSubmit={handleStatusUpdate}
-        currentStatus={employee.status}
+        currentStatus={employee.status as EmployeeStatus || 'ACTIVE'}
       />
 
       <ConfirmationDialog

@@ -11,9 +11,9 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
-  useTheme
+  Divider
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { EmployeeDTO } from '@/types';
 import { employeeSchema } from '@/validations/employeeValidation';
@@ -48,7 +48,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
   useEffect(() => {
     if (initialValues) {
-      reset(initialValues);
+      reset({
+        ...initialValues,
+        department: initialValues.department || ''
+      });
     }
   }, [initialValues, reset]);
 
@@ -142,6 +145,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   {...register('department')}
                   error={!!errors.department}
                   helperText={errors.department?.message}
+                  defaultValue={initialValues?.department || ''}
                 >
                   {departmentOptions.map((dept) => (
                     <MenuItem key={dept.value} value={dept.value}>

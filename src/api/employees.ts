@@ -1,4 +1,4 @@
-// src/api/employees.ts
+import axios from 'axios';
 import apiClient from '@/utils/apiClient';
 import {
   EmployeeDTO,
@@ -37,7 +37,7 @@ export const updateEmployee = async (
   id: number,
   employee: EmployeeUpdateDTO
 ): Promise<EmployeeDTO> => {
-  const response = await apiClient.put(`/employees/${id}`, employee);
+  const response = await apiClient.patch(`/employees/${id}`, employee);
   return response.data;
 };
 
