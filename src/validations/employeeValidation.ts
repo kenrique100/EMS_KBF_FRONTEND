@@ -63,20 +63,16 @@ export const employeeSchema = yup.object().shape({
     .oneOf(['MALE', 'FEMALE'], 'Gender must be either MALE or FEMALE')
     .required('Gender is required'),
 
-  dateOfBirth: yup
-    .string()
+  dateOfBirth: yup.string()
     .required('Date of birth is required')
-    .test('valid-date', 'Invalid date', (val) => {
+    .test('valid-date', 'Invalid date', val => !isNaN(Date.parse(val ?? '')))
+    .test('age', 'Must be 18+', val => {
       if (!val) return false;
-      return !isNaN(Date.parse(val));
-    })
-    .test('age', 'Must be 18 or older', (val) => {
-      if (!val) return false;
-      const date = new Date(val);
+      const birthDate = new Date(val);
       const today = new Date();
-      let age = today.getFullYear() - date.getFullYear();
-      const m = today.getMonth() - date.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < date.getDate())) age--;
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
       return age >= 18;
     }),
 

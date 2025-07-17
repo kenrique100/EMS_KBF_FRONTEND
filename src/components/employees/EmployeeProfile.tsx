@@ -113,10 +113,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
               {employee.name}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              {employee.username} • {employee.email}
-            </Typography>
-            <Typography variant={isSmall ? 'h5' : 'h4'} fontWeight={700} gutterBottom>
-              {employee.gender}
+              @{employee.username} • {employee.email}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {employee.department}
@@ -155,6 +152,10 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
                 </>
               )}
               <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                Gender
+              </Typography>
+              <Typography>{employee.gender}</Typography>
+              <Typography variant="subtitle2" sx={{ mt: 2 }}>
                 Phone Number
               </Typography>
               <Typography>{employee.phoneNumber || 'N/A'}</Typography>
@@ -165,7 +166,9 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
               <Typography variant="subtitle2" sx={{ mt: 2 }}>
                 Date of Birth
               </Typography>
-              <Typography>{formatDate(employee.dateOfBirth)}</Typography>
+              <Typography>
+                {employee.dateOfBirth ? formatDate(employee.dateOfBirth) : 'N/A'}
+              </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
