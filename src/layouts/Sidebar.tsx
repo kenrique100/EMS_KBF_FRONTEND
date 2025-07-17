@@ -32,9 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, handleDrawerToggle }) => 
   const drawerWidth = 240;
 
   const menuItems = [
-    { path: '/', icon: <DashboardIcon />, text: 'Dashboard' },
     { path: '/profile', icon: <ProfileIcon />, text: 'Profile' },
     ...(hasRole('ROLE_ADMIN') ? [
+      { path: '/', icon: <DashboardIcon />, text: 'Dashboard' },
       { path: '/employees', icon: <PeopleIcon />, text: 'Employees' },
       { path: '/tasks', icon: <AssignmentIcon />, text: 'Tasks' },
       { path: '/salaries', icon: <PaymentIcon />, text: 'Salaries' },

@@ -43,6 +43,8 @@ const EmployeeEditPage: React.FC = () => {
         username: employeeData.username,
         name: employeeData.name,
         email: employeeData.email,
+        dateOfBirth: employeeData.dateOfBirth,
+        gender: employeeData.gender,
         phoneNumber: employeeData.phoneNumber,
         nationalId: employeeData.nationalId,
         department: employeeData.department,

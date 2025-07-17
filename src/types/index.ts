@@ -3,6 +3,7 @@ export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'UNCOMPLETED'
 export type PaymentStatus = 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED';
 export type Role = 'ROLE_USER' | 'ROLE_ADMIN';
 export type ActionType = 'START' | 'STOP' | 'CONTINUE' | 'COMPLETE' | 'SUBMIT' | 'CANCEL';
+export type Gender = 'MALE' | 'FEMALE';
 
 export type Department =
   | 'ADMINISTRATION'
@@ -18,11 +19,13 @@ export interface UserResponse {
   id: number;
   username: string;
   name: string;
+  gender: Gender;
   email: string;
   roles: Role[];
   profilePicturePath?: string;
   department?: Department;
   dateOfEmployment?: string;
+  dateOfBirth?: string;
   status?: EmployeeStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -52,7 +55,9 @@ export interface Employee {
   username: string;
   name: string;
   email: string;
+  gender: Gender;
   phoneNumber?: string;
+  dateOfBirth: string;
   department: Department;
   dateOfEmployment: string;
   status: EmployeeStatus;
@@ -77,23 +82,24 @@ export interface Employee {
 }
 
 export interface EmployeeDTO {
-  id: number;
+  id?: number;
   username: string;
   name: string;
-  password?: string;
+  gender: Gender;
+  dateOfBirth: string;
   email: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   nationalId: string;
   department: Department;
   dateOfEmployment: string;
+  password?: string;
   status?: EmployeeStatus;
   profilePicturePath?: string;
-  documentPath?: string;
   statusExpiration?: string;
-  createdAt?: string;
-  updatedAt?: string;
   totalHoursWorkedLast30Days?: number;
   suspensionDuration?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface EmployeeStatusUpdateDTO {
@@ -118,6 +124,8 @@ export interface EmployeeProfileDTO {
   username: string;
   name: string;
   email: string;
+  gender: Gender;
+  dateOfBirth: string;
   phoneNumber?: string;
   department: Department;
   dateOfEmployment: string;
@@ -143,12 +151,30 @@ export interface EmployeeUpdateDTO {
   id?: number;
   username?: string;
   name?: string;
+  gender?: Gender;
+  dateOfBirth?: string;
   email?: string;
   phoneNumber?: string;
+  nationalId?: string;
   department?: Department;
   dateOfEmployment?: string;
   password?: string;
-  nationalId?: string;
+  status?: EmployeeStatus;
+}
+
+export interface EmployeeFormValues {
+  id?: number;
+  username: string;
+  name: string;
+  gender: Gender;
+  dateOfBirth: string;
+  email: string;
+  phoneNumber: string;
+  nationalId: string;
+  department: Department;
+  dateOfEmployment: string;
+  password?: string;
+  status?: EmployeeStatus;
 }
 
 export interface Task {
@@ -313,3 +339,4 @@ export interface ProductivitySummaryDTO {
   overallProductivity: number;
   workingDays: number;
 }
+

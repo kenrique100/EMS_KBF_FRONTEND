@@ -25,11 +25,14 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Work as WorkIcon,
+  CreditCard as CreditCardIcon,
   Event as EventIcon,
   ArrowBack as ArrowBackIcon,
   Assignment as AssignmentIcon,
   Paid as PaidIcon,
   History as HistoryIcon,
+  Cake as CakeIcon,
+  Wc as WcIcon,
 } from '@mui/icons-material';
 import {
   getEmployeeById,
@@ -209,10 +212,24 @@ const EmployeeDetailsPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Employment Details
               </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2}}>
+                <WcIcon color="action" sx={{ mr: 1.5 }} />
+                <Typography>{employee.gender}</Typography>
+              </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <EventIcon color="action" sx={{ mr: 1.5 }} />
                 <Typography>
                   Joined: {formatDate(employee.dateOfEmployment)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CreditCardIcon color="action" sx={{ mr: 1.5 }} />
+                <Typography>{employee.nationalId}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CakeIcon color="action" sx={{ mr: 1.5 }} />
+                <Typography>
+                  Born: {formatDate(employee.dateOfBirth)}
                 </Typography>
               </Box>
               {employee.statusExpiration && (

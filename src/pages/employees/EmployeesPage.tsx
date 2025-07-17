@@ -12,16 +12,17 @@ import { getEmployees, deleteEmployee } from '@/api/employees';
 import { EmployeeDTO, Employee } from '@/types';
 
 const mapToEmployee = (dto: EmployeeDTO): Employee => ({
-  id: dto.id,
+  id: dto.id as number,
   username: dto.username,
   name: dto.name,
+  gender: dto.gender,
+  dateOfBirth: dto.dateOfBirth,
   email: dto.email,
   phoneNumber: dto.phoneNumber,
   department: dto.department,
   dateOfEmployment: dto.dateOfEmployment,
   status: dto.status || 'ACTIVE',
   profilePicturePath: dto.profilePicturePath,
-  documentPath: dto.documentPath,
   nationalId: dto.nationalId,
   createdAt: dto.createdAt || new Date().toISOString(),
   updatedAt: dto.updatedAt || new Date().toISOString(),

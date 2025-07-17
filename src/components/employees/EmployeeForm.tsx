@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider
+  Divider,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
@@ -50,7 +50,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     if (initialValues) {
       reset({
         ...initialValues,
-        department: initialValues.department || ''
+        department: initialValues.department || '',
+        gender: initialValues.gender || '',
+        dateOfBirth: initialValues.dateOfBirth || '',
       });
     }
   }, [initialValues, reset]);
@@ -86,7 +88,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
           <form onSubmit={handleSubmit(submitHandler)} noValidate>
             <Grid container spacing={3}>
-              <MotionGrid item xs={12} md={6} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <MotionGrid
+                item
+                xs={12}
+                md={6}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
                 <TextField
                   fullWidth
                   label="Username"
@@ -96,7 +104,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 />
               </MotionGrid>
 
-              <MotionGrid item xs={12} md={6} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
+              <MotionGrid
+                item
+                xs={12}
+                md={6}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.05 }}
+              >
                 <TextField
                   fullWidth
                   label="Full Name"
@@ -137,6 +152,36 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 />
               </Grid>
 
+              {/* Gender Field */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Gender"
+                  {...register('gender')}
+                  error={!!errors.gender}
+                  helperText={errors.gender?.message}
+                  defaultValue={initialValues?.gender || ''}
+                >
+                  <MenuItem value="MALE">Male</MenuItem>
+                  <MenuItem value="FEMALE">Female</MenuItem>
+                </TextField>
+              </Grid>
+
+              {/* Date of Birth Field */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Date of Birth"
+                  InputLabelProps={{ shrink: true }}
+                  {...register('dateOfBirth')}
+                  error={!!errors.dateOfBirth}
+                  helperText={errors.dateOfBirth?.message}
+                  defaultValue={initialValues?.dateOfBirth || ''}
+                />
+              </Grid>
+
               <Grid item xs={12} md={6}>
                 <TextField
                   select
@@ -164,6 +209,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   {...register('dateOfEmployment')}
                   error={!!errors.dateOfEmployment}
                   helperText={errors.dateOfEmployment?.message}
+                  defaultValue={initialValues?.dateOfEmployment || ''}
                 />
               </Grid>
 
@@ -194,7 +240,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                         <CircularProgress size={20} color="inherit" />
                         <Box ml={1}>Processing...</Box>
                       </>
-                    ) : initialValues?.id ? 'Update Employee' : 'Create Employee'}
+                    ) : initialValues?.id ? (
+                      'Update Employee'
+                    ) : (
+                      'Create Employee'
+                    )}
                   </Button>
                 </Box>
               </Grid>
