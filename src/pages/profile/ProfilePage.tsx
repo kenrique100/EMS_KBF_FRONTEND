@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Tabs,
@@ -28,39 +28,77 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import PaidIcon from '@mui/icons-material/Paid';
 import { notify } from '@/store/notificationService';
 import { uploadProfilePicture } from '@/api/profilePictures';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/authStore';
+import NotFoundPage from '@/pages/NotFoundPage';
+import LoadingScreen from '@/components/common/LoadingScreen';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, initialized } = useAuthStore();
 
-  const { data: employee, isLoading: isEmployeeLoading } = useQuery<EmployeeProfileDTO>({
+  const {
+    data: employee,
+    isLoading: isEmployeeLoading,
+    error: employeeError,
+  } = useQuery<EmployeeProfileDTO>({
     queryKey: ['ownProfile'],
     queryFn: getOwnProfile,
+    enabled: isAuthenticated,
+    retry: false,
   });
 
-  const { data: tasks, isLoading: isTasksLoading } = useQuery<TaskDTO[]>({
-    queryKey: ['ownTasks'],
-    queryFn: () => employee?.id ? getTasksForEmployee(employee.id) : [],
+  const {
+    data: tasks,
+    isLoading: isTasksLoading,
+  } = useQuery<TaskDTO[]>({
+    queryKey: ['ownTasks', employee?.id],
+    queryFn: () => (employee?.id ? getTasksForEmployee(employee.id) : Promise.resolve([])),
     enabled: !!employee?.id,
   });
 
-  const { data: salaries, isLoading: isSalariesLoading } = useQuery<SalaryPaymentDTO[]>({
-    queryKey: ['ownSalaries'],
-    queryFn: () => employee?.id ? getSalaryPaymentsForEmployee(employee.id) : [],
+  const {
+    data: salaries,
+    isLoading: isSalariesLoading,
+  } = useQuery<SalaryPaymentDTO[]>({
+    queryKey: ['ownSalaries', employee?.id],
+    queryFn: () => (employee?.id ? getSalaryPaymentsForEmployee(employee.id) : Promise.resolve([])),
     enabled: !!employee?.id,
   });
+
+  useEffect(() => {
+    if (initialized && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [initialized, isAuthenticated, navigate]);
 
   const handleProfilePictureUpdate = async (file: File) => {
     if (!employee?.id) return;
 
     try {
       await uploadProfilePicture(employee.id, file);
+      await queryClient.invalidateQueries({ queryKey: ['ownProfile'] }); // ✅ FIXED
       notify('Profile picture updated successfully', 'success');
     } catch (error) {
       notify('Failed to update profile picture', 'error');
+      console.error('Profile picture update error:', error);
     }
   };
+
+  if (!initialized) {
+    return <LoadingScreen />;
+  }
+
+  if (employeeError) {
+    return (
+      <NotFoundPage
+        error={employeeError}
+        onRetry={() => queryClient.refetchQueries({ queryKey: ['ownProfile'] })} // ✅ FIXED
+      />
+    );
+  }
 
   if (isEmployeeLoading || !employee) {
     return <Loading />;
@@ -73,7 +111,10 @@ const ProfilePage: React.FC = () => {
         breadcrumbs={[{ label: 'Profile', path: '/profile' }]}
       />
 
-      <EmployeeProfile employee={employee} onProfilePictureUpdate={handleProfilePictureUpdate} />
+      <EmployeeProfile
+        employee={employee}
+        onProfilePictureUpdate={handleProfilePictureUpdate}
+      />
 
       <Tabs
         value={activeTab}
@@ -86,7 +127,7 @@ const ProfilePage: React.FC = () => {
       </Tabs>
 
       <Box sx={{ mt: 3 }}>
-        {activeTab === 0 && (
+        {activeTab === 0 ? (
           <>
             <Typography variant="h6" gutterBottom>
               Assigned Tasks
@@ -139,9 +180,7 @@ const ProfilePage: React.FC = () => {
               </Typography>
             )}
           </>
-        )}
-
-        {activeTab === 1 && (
+        ) : (
           <>
             <Typography variant="h6" gutterBottom>
               Salary Payments

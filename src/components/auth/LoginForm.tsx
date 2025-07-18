@@ -12,7 +12,10 @@ import {
   Link,
   CircularProgress,
   Alert,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 interface LoginFormData {
@@ -29,6 +32,7 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(schema),
@@ -51,6 +55,14 @@ const LoginForm = () => {
   const onSubmit = (data: LoginFormData) => {
     setError(null);
     mutation.mutate(data);
+  };
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
   };
 
   return (
@@ -86,13 +98,27 @@ const LoginForm = () => {
       <TextField
         fullWidth
         label="Password"
-        type="password"
+        type={showPassword ? 'text' : 'password'}
         {...register('password')}
         error={!!errors.password}
         helperText={errors.password?.message}
         margin="normal"
         variant="outlined"
         autoComplete="current-password"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="toggle password visibility"
+                onClick={handleClickShowPassword}
+                onMouseDown={handleMouseDownPassword}
+                edge="end"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
       />
       <Button
         type="submit"

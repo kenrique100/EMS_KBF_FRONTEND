@@ -1,9 +1,10 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 import { notify } from '@/store/notificationService';
-import { TokenRefreshResponse } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
+    _retry?: boolean;
     skipAuthRefresh?: boolean;
     skipErrorNotification?: boolean;
   }
@@ -16,10 +17,6 @@ interface ApiErrorResponse {
   [key: string]: unknown;
 }
 
-interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean;
-}
-
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
@@ -29,20 +26,21 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Request interceptor
 apiClient.interceptors.request.use(
-  (config) => {
-    if (config.skipAuthRefresh) {
-      return config;
-    }
+  (config: InternalAxiosRequestConfig) => {
+    const token = useAuthStore.getState().getAccessToken();
 
-    const token = localStorage.getItem('accessToken');
-    if (token) {
+    if (token && !config.headers?.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Add credentials for file requests
-    if (config.url?.includes('/files/')) {
+    // Special handling for file uploads
+    if (config.url?.includes('/profile-pictures')) {
       config.withCredentials = true;
+      if (config.headers && config.data instanceof FormData) {
+        config.headers['Content-Type'] = 'multipart/form-data';
+      }
     }
 
     return config;
@@ -50,59 +48,66 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: AxiosError<ApiErrorResponse>) => {
-    const originalRequest = error.config as CustomAxiosRequestConfig;
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+      skipAuthRefresh?: boolean;
+      skipErrorNotification?: boolean;
+    };
+
+    // Ensure originalRequest exists
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Skip handling if marked to skip
+    if (originalRequest.skipAuthRefresh || originalRequest.skipErrorNotification) {
+      return Promise.reject(error);
+    }
 
     // Handle 401 Unauthorized
-    if (error.response?.status === 401 &&
+    if (
+      error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/') &&
-      !originalRequest.skipAuthRefresh) {
+      !originalRequest.url?.includes('/auth/')
+    ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token available');
-
-        // Use pure axios to avoid interceptor loops
-        const refreshResponse = await axios.post<TokenRefreshResponse>(
-          `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
-          { refreshToken },
-          {
-            headers: { 'Content-Type': 'application/json' },
+        const refreshed = await useAuthStore.getState().refreshToken();
+        if (refreshed) {
+          const newToken = useAuthStore.getState().getAccessToken();
+          if (newToken) {
+            if (!originalRequest.headers) {
+              originalRequest.headers = {};
+            }
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return apiClient(originalRequest); // ✅ No TS error now
           }
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
-        localStorage.setItem('accessToken', accessToken);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
         }
-
-        // Update authorization header
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
-
-        return apiClient(originalRequest);
       } catch (refreshError) {
+        useAuthStore.getState().clearAuth();
         if (!originalRequest.skipErrorNotification) {
           notify('Session expired. Please login again.', 'error');
         }
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         return Promise.reject(error);
       }
     }
 
+    // Handle other errors
     if (!originalRequest.skipErrorNotification) {
-      const errorMessage = error.response?.data?.message ||
+      const errorMessage =
+        error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
         'An unexpected error occurred';
-      notify(errorMessage, 'error');
+
+      if (error.response?.status !== 401) {
+        notify(errorMessage, 'error');
+      }
     }
 
     return Promise.reject(error);

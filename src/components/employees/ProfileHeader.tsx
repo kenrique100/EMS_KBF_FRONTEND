@@ -1,4 +1,5 @@
-// src/components/profile/ProfileHeader.tsx
+// src/components/employees/ProfileHeader.tsx
+import React from 'react';
 import {
   Box,
   Typography,
@@ -12,7 +13,7 @@ import {
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import EditableAvatar from '@/components/common/EditableAvatar';
 import { motion } from 'framer-motion';
-import { deleteProfilePicture, getProfilePictureUrl } from '@/api/profilePictures';
+import { deleteProfilePicture } from '@/api/profilePictures';
 import { EmployeeStatus } from '@/types';
 
 interface ProfileHeaderProps {
@@ -102,11 +103,11 @@ const ProfileHeader = ({
       {showAvatar ? (
         <EditableAvatar
           employeeId={employeeId}
-          profileUrl={profileUrl ? getProfilePictureUrl(employeeId) : undefined}
+          profileUrl={profileUrl}
           onChange={onProfilePictureUpdate}
           onDelete={async () => {
             await deleteProfilePicture(employeeId);
-            onProfilePictureUpdate?.(new File([], ''));
+            onProfilePictureUpdate(new File([], ''));
           }}
           size={isSmall ? 80 : 120}
           editable={editable}

@@ -1,6 +1,6 @@
-// src/hooks/useTask.ts
 import { useState, useCallback } from 'react';
 import { notify } from '@/store/notificationService';
+import { mapTaskDTOtoTask } from '@/utils/taskUtils';
 import {
   getTaskById,
   updateTask,
@@ -9,33 +9,6 @@ import {
   validateTask as validateTaskApi
 } from '@/api/tasks';
 import { Task, TaskDTO, TaskActionDTO, TaskValidationDTO } from '@/types';
-
-const mapTaskDTOtoTask = (dto: TaskDTO): Task => {
-  if (!dto.id) {
-    throw new Error('Task ID is required');
-  }
-
-  return {
-    id: dto.id,
-    title: dto.title,
-    description: dto.description || '',
-    deadline: dto.deadline,
-    employeeId: dto.employeeId,
-    employeeName: dto.employeeName || '',
-    status: dto.status || 'PENDING',
-    expectedHours: dto.expectedHours || 0,
-    actualHours: dto.actualHours || 0,
-    totalWorkedMinutes: dto.totalWorkedMinutes || 0,
-    startTime: dto.startTime,
-    stopTime: dto.stopTime,
-    lastResumeTime: dto.lastResumeTime,
-    isValidated: dto.isValidated || false,
-    validationTime: dto.validationTime,
-    submitted: dto.submitted || false,
-    createdAt: dto.createdAt || new Date().toISOString(),
-    updatedAt: dto.updatedAt || new Date().toISOString(),
-  };
-};
 
 const useTask = () => {
   const [task, setTask] = useState<Task | null>(null);
@@ -50,8 +23,9 @@ const useTask = () => {
       setTask(mapped);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch task');
-      notify('Failed to fetch task', 'error');
+      const message = err instanceof Error ? err.message : 'Failed to fetch task';
+      setError(message);
+      notify(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -66,8 +40,9 @@ const useTask = () => {
       setError(null);
       return mapped;
     } catch (err) {
-      setError('Failed to update task');
-      notify('Failed to update task', 'error');
+      const message = err instanceof Error ? err.message : 'Failed to update task';
+      setError(message);
+      notify(message, 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -83,8 +58,9 @@ const useTask = () => {
       setError(null);
       return mapped;
     } catch (err) {
-      setError('Failed to update task status');
-      notify('Failed to update task status', 'error');
+      const message = err instanceof Error ? err.message : 'Failed to update task status';
+      setError(message);
+      notify(message, 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -100,8 +76,9 @@ const useTask = () => {
       setError(null);
       return mapped;
     } catch (err) {
-      setError('Failed to validate task');
-      notify('Failed to validate task', 'error');
+      const message = err instanceof Error ? err.message : 'Failed to validate task';
+      setError(message);
+      notify(message, 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -114,9 +91,17 @@ const useTask = () => {
       await deleteTaskApi(id);
       setTask(null);
       setError(null);
+      return true;
     } catch (err) {
-      setError('Failed to delete task');
-      notify('Failed to delete task', 'error');
+      let errorMessage = 'Failed to delete task';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err && 'response' in err) {
+        const response = (err as any).response;
+        errorMessage = response?.data?.message || errorMessage;
+      }
+      setError(errorMessage);
+      notify(errorMessage, 'error');
       throw err;
     } finally {
       setLoading(false);

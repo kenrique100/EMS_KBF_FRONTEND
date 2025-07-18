@@ -1,19 +1,28 @@
 // src/services/notificationService.ts
-let notificationFunction: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
+type NotificationSeverity = 'success' | 'error' | 'warning' | 'info';
 
-export const registerNotification = (
-  fn: typeof notificationFunction
-) => {
+let notificationFunction: ((message: string, severity: NotificationSeverity) => void) | null = null;
+const notificationQueue: { message: string; severity: NotificationSeverity }[] = [];
+
+export const registerNotification = (fn: typeof notificationFunction) => {
   notificationFunction = fn;
+  // Process any queued notifications
+  while (notificationQueue.length > 0 && notificationFunction) {
+    const { message, severity } = notificationQueue.shift()!;
+    notificationFunction(message, severity);
+  }
 };
 
-export const notify = (
-  message: string,
-  severity: 'success' | 'error' | 'warning' | 'info' = 'info'
-) => {
+export const unregisterNotification = () => {
+  notificationFunction = null;
+};
+
+export const notify = (message: string, severity: NotificationSeverity = 'info') => {
   if (notificationFunction) {
     notificationFunction(message, severity);
   } else {
-    console.log(`[Notification ${severity}]: ${message}`);
+    // Queue the notification if service isn't ready
+    notificationQueue.push({ message, severity });
+    console.log(`[Notification Queued (${severity})]: ${message}`);
   }
 };

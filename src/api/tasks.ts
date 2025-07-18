@@ -35,7 +35,16 @@ export const updateTaskStatus = async (actionDTO: TaskActionDTO): Promise<TaskDT
 };
 
 export const deleteTask = async (id: number): Promise<void> => {
-    await apiClient.delete(`/tasks/${id}`);
+  try {
+    const response = await apiClient.delete(`/tasks/${id}`);
+    if (response.status !== 200 && response.status !== 204) {
+      throw new Error('Failed to delete task');
+    }
+    return response.data;
+  } catch (error) {
+    console.error('API delete error:', error);
+    throw error;
+  }
 };
 
 export const getProductivityStats = async (employeeId: number): Promise<ProductivityStatsDTO> => {

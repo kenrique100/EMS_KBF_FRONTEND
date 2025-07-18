@@ -1,3 +1,4 @@
+// src/AppRoutes.tsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -23,11 +24,16 @@ import LoadingScreen from '@/components/common/LoadingScreen';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 
 const AppRoutes: React.FC = () => {
-  const { initialized, isAuthenticated } = useAuthStore();
+  const { initialized, isAuthenticated, hasRole } = useAuthStore();
 
   if (!initialized) {
     return <LoadingScreen />;
   }
+
+  const getDefaultRoute = () => {
+    if (!isAuthenticated) return '/login';
+    return hasRole('ROLE_ADMIN') ? '/dashboard' : '/profile';
+  };
 
   return (
     <Routes>
@@ -36,11 +42,10 @@ const AppRoutes: React.FC = () => {
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="/404" element={<NotFoundPage />} />
 
-      {/* Authenticated Routes */}
+      {/* Common Authenticated Routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route index element={<Navigate to={getDefaultRoute()} replace />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/tasks/:id" element={<TaskDetailPage />} />
@@ -53,6 +58,7 @@ const AppRoutes: React.FC = () => {
       {/* Admin-Only Routes */}
       <Route element={<ProtectedRoute roles={['ROLE_ADMIN']} />}>
         <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/tasks/create" element={<TaskCreatePage />} />
           <Route path="/tasks/:id/edit" element={<TaskEditPage />} />
           <Route path="/employees" element={<EmployeesPage />} />
@@ -63,11 +69,8 @@ const AppRoutes: React.FC = () => {
         </Route>
       </Route>
 
-      {/* Default Fallback Routes */}
-      <Route
-        path="/"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
-      />
+      {/* Fallback Routes */}
+      <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
       <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );

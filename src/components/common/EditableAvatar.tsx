@@ -1,3 +1,4 @@
+// src/components/common/EditableAvatar.tsx
 import React, { useEffect, useState } from 'react';
 import {
   Avatar,
@@ -13,10 +14,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
-  getProfilePicture,
   uploadProfilePicture,
   deleteProfilePicture,
+  getProfilePictureUrl,
 } from '@/api/profilePictures';
+import { useAuthStore } from '@/store/authStore';
 
 export interface EditableAvatarProps {
   employeeId: number;
@@ -45,6 +47,7 @@ const EditableAvatar: React.FC<EditableAvatarProps> = ({
   const [isLoading, setIsLoading] = useState(!profileUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -55,14 +58,22 @@ const EditableAvatar: React.FC<EditableAvatarProps> = ({
       return;
     }
 
-    (async () => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+
+    const loadImage = async () => {
       try {
         setIsLoading(true);
-        const url = await getProfilePicture(employeeId);
-        if (isMounted) {
-          setImageUrl(url || undefined);
+        if (imageUrl && !profileUrl) {
+          URL.revokeObjectURL(imageUrl);
         }
+
+        const url = getProfilePictureUrl(employeeId);
+        setImageUrl(url);
       } catch (error) {
+        console.error('Failed to load profile picture:', error);
         if (isMounted) {
           setImageUrl(undefined);
         }
@@ -71,15 +82,14 @@ const EditableAvatar: React.FC<EditableAvatarProps> = ({
           setIsLoading(false);
         }
       }
-    })();
+    };
+
+    loadImage();
 
     return () => {
       isMounted = false;
-      if (imageUrl && !profileUrl) {
-        URL.revokeObjectURL(imageUrl);
-      }
     };
-  }, [employeeId, profileUrl]);
+  }, [employeeId, profileUrl, isAuthenticated]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -91,8 +101,8 @@ const EditableAvatar: React.FC<EditableAvatarProps> = ({
         await onChange(file);
       } else {
         await uploadProfilePicture(employeeId, file);
-        const newUrl = await getProfilePicture(employeeId);
-        setImageUrl(newUrl || undefined);
+        const newUrl = getProfilePictureUrl(employeeId);
+        setImageUrl(newUrl);
       }
       onUpdate?.();
     } catch (error) {
@@ -162,12 +172,19 @@ const EditableAvatar: React.FC<EditableAvatarProps> = ({
             <MenuItem component="label" disabled={isUploading}>
               <EditIcon fontSize="small" sx={{ mr: 1 }} />
               Upload
-              <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+              <input
+                type="file"
+                hidden
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileChange}
+              />
             </MenuItem>
-            <MenuItem onClick={handleDelete} disabled={isUploading}>
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-              Delete
-            </MenuItem>
+            {imageUrl && (
+              <MenuItem onClick={handleDelete} disabled={isUploading}>
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                Delete
+              </MenuItem>
+            )}
           </Menu>
         </>
       )}

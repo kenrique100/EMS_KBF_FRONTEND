@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
-import TaskForm from '../../components/tasks/TaskForm';
-import PageHeader from '../../components/common/PageHeader';
-import Loading from '../../components/common/Loading';
+import TaskForm from '@/components/tasks/TaskForm';
+import PageHeader from '@/components/common/PageHeader';
+import Loading from '@/components/common/Loading';
 import { getEmployees } from '@/api/employees';
 import { notify } from '@/store/notificationService';
 import { createTask } from '@/api/tasks';
+import { TaskDTO, EmployeeDTO } from '@/types';
+
+interface EmployeeOption {
+  id: number;
+  name: string;
+}
 
 const TaskCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [employees, setEmployees] = useState<{ id: number; name: string }[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const data = await getEmployees();
-        setEmployees(data.map(e => ({ id: e.id, name: e.name })));
+        const data: EmployeeDTO[] = await getEmployees();
+        const employeeOptions = data
+          .filter((e): e is EmployeeDTO & { id: number } => e.id !== undefined)
+          .map((e) => ({
+            id: e.id as number,
+            name: e.name
+          }));
+        setEmployees(employeeOptions);
       } catch (error) {
         notify('Failed to fetch employees', 'error');
       } finally {
@@ -29,12 +41,16 @@ const TaskCreatePage: React.FC = () => {
     fetchEmployees();
   }, []);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (taskData: TaskDTO) => {
     setIsSubmitting(true);
     try {
-      await createTask(data);
+      const createdTask = await createTask({
+        ...taskData,
+        employeeId: Number(taskData.employeeId), // Ensure this is a number
+        expectedHours: Number(taskData.expectedHours || 0)
+      });
       notify('Task created successfully', 'success');
-      navigate('/tasks');
+      navigate(`/tasks/${createdTask.id}`);
     } catch (error) {
       notify('Failed to create task', 'error');
     } finally {
@@ -60,6 +76,10 @@ const TaskCreatePage: React.FC = () => {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         employees={employees}
+        initialValues={{
+          employeeId: '', // Empty string for initial value
+          expectedHours: 0,
+        }}
       />
     </Container>
   );

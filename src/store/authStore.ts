@@ -22,144 +22,133 @@ interface AuthState {
   getAccessToken: () => string | null;
 }
 
-// Token storage abstraction
 const tokenStorage = {
   getAccessToken: () => localStorage.getItem('accessToken'),
   getRefreshToken: () => localStorage.getItem('refreshToken'),
   setTokens: (accessToken: string, refreshToken: string) => {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
   },
   clearTokens: () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    delete axios.defaults.headers.common['Authorization'];
   },
 };
 
 export const useAuthStore = create<AuthState>()(
   immer((set, get) => ({
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
-    initialized: false,
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      initialized: false,
 
-    login: async (username, password) => {
-      set({ isLoading: true, error: null });
-      try {
-        const { accessToken, refreshToken, user } = await apiLogin({ username, password });
-
-        tokenStorage.setTokens(accessToken, refreshToken);
-        set({ user, isAuthenticated: true, error: null });
-      } catch (err) {
-        let errorMessage = 'Login failed';
-
-        if (axios.isAxiosError(err)) {
-          if (err.response?.status === 401) {
-            errorMessage = 'Invalid username or password';
-          } else {
+      login: async (username, password) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { accessToken, refreshToken, user } = await apiLogin({ username, password });
+          tokenStorage.setTokens(accessToken, refreshToken);
+          set({ user, isAuthenticated: true, error: null });
+        } catch (err) {
+          let errorMessage = 'Login failed';
+          if (axios.isAxiosError(err)) {
             errorMessage = err.response?.data?.message || err.message;
+          } else if (err instanceof Error) {
+            errorMessage = err.message;
           }
-        } else if (err instanceof Error) {
-          errorMessage = err.message;
+          set({ error: errorMessage });
+          throw new Error(errorMessage);
+        } finally {
+          set({ isLoading: false, initialized: true });
         }
+      },
 
-        set({ error: errorMessage });
-        throw new Error(errorMessage);
-      } finally {
-        set({ isLoading: false, initialized: true });
-      }
-    },
-
-    logout: async () => {
-      set({ isLoading: true });
-      try {
-        const accessToken = tokenStorage.getAccessToken();
-        if (accessToken) {
-          await apiLogout();
-        }
-      } catch (err) {
-        console.error('Logout error:', err);
-      } finally {
-        get().clearAuth();
-        set({ isLoading: false });
-      }
-    },
-
-    initializeAuth: async () => {
-      if (get().initialized) return;
-
-      const accessToken = tokenStorage.getAccessToken();
-      if (!accessToken) {
-        set({ initialized: true });
-        return;
-      }
-
-      set({ isLoading: true });
-      try {
-        const user = await getCurrentUser();
-        set({ user, isAuthenticated: true, error: null });
-      } catch (err) {
-        // Try to refresh token if initial auth fails
-        if (!(await get().refreshToken())) {
+      logout: async () => {
+        set({ isLoading: true });
+        try {
+          const accessToken = tokenStorage.getAccessToken();
+          if (accessToken) {
+            await apiLogout();
+          }
+        } catch (err) {
+          console.error('Logout error:', err);
+        } finally {
           get().clearAuth();
+          set({ isLoading: false });
         }
-      } finally {
-        set({ initialized: true, isLoading: false });
-      }
-    },
+      },
 
-    refreshToken: async () => {
-      const refreshToken = tokenStorage.getRefreshToken();
-      if (!refreshToken) return false;
+      initializeAuth: async () => {
+        if (get().initialized) return;
 
-      try {
-        const { accessToken, refreshToken: newRefreshToken } = await apiRefreshToken(refreshToken);
+        const accessToken = tokenStorage.getAccessToken();
+        if (!accessToken) {
+          set({ initialized: true });
+          return;
+        }
 
-        tokenStorage.setTokens(
-          accessToken,
-          newRefreshToken || refreshToken // Fallback to old refresh token if new one not provided
-        );
+        set({ isLoading: true });
+        try {
+          const user = await getCurrentUser();
+          set({ user, isAuthenticated: true, error: null });
+        } catch (err) {
+          if (!(await get().refreshToken())) {
+            get().clearAuth();
+          }
+        } finally {
+          set({ initialized: true, isLoading: false });
+        }
+      },
 
-        const user = await getCurrentUser();
-        set({ user, isAuthenticated: true, error: null });
-        return true;
-      } catch (err) {
-        get().clearAuth();
-        set({ error: 'Session expired. Please login again.' });
-        return false;
-      }
-    },
+      refreshToken: async () => {
+        const refreshToken = tokenStorage.getRefreshToken();
+        if (!refreshToken) return false;
 
-    clearAuth: () => {
-      tokenStorage.clearTokens();
-      set({ user: null, isAuthenticated: false, error: null });
-    },
+        try {
+          const { accessToken, refreshToken: newRefreshToken } = await apiRefreshToken(refreshToken);
+          tokenStorage.setTokens(accessToken, newRefreshToken || refreshToken);
 
-    setUser: (user) => set({ user }),
+          const user = await getCurrentUser();
+          set({ user, isAuthenticated: true, error: null });
+          return true;
+        } catch (err) {
+          get().clearAuth();
+          set({ error: 'Session expired. Please login again.' });
+          return false;
+        }
+      },
 
-    hasRole: (role) => {
-      const { user } = get();
-      return !!user?.roles?.includes(role);
-    },
+      clearAuth: () => {
+        tokenStorage.clearTokens();
+        set({ user: null, isAuthenticated: false, error: null });
+      },
 
-    hasAnyRole: (roles) => {
-      const { user } = get();
-      return roles.some(role => user?.roles?.includes(role));
-    },
+      setUser: (user) => set({ user }),
 
-    getUserId: () => {
-      const { user } = get();
-      return user?.id;
-    },
+      hasRole: (role) => {
+        const { user } = get();
+        return !!user?.roles?.includes(role);
+      },
 
-    getAccessToken: () => {
-      return tokenStorage.getAccessToken();
-    },
-  }))
-);
+      hasAnyRole: (roles) => {
+        const { user } = get();
+        return roles.some(role => user?.roles?.includes(role));
+      },
 
-// Optional: Add axios interceptor for automatic token refresh
+      getUserId: () => {
+        const { user } = get();
+        return user?.id;
+      },
+
+      getAccessToken: () => {
+        return tokenStorage.getAccessToken();
+      },
+    })
+  ));
+
+// Axios response interceptor for token refresh
 axios.interceptors.response.use(
   response => response,
   async error => {
@@ -169,7 +158,8 @@ axios.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      authStore.getAccessToken()
+      authStore.getAccessToken() &&
+      !originalRequest.url?.includes('/auth/')
     ) {
       originalRequest._retry = true;
 

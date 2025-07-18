@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom'; // <-- Add this
+import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ConfirmProvider } from 'material-ui-confirm'; // <-- import this
 import App from './App';
 import './assets/styles/index.css';
 
@@ -18,9 +19,11 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter> {/* ✅ Wrap App inside BrowserRouter */}
+    <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ConfirmProvider>
+          <App />
+        </ConfirmProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </BrowserRouter>

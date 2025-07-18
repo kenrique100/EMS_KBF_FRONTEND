@@ -1,3 +1,4 @@
+// src/components/employees/EmployeeProfile.tsx
 import React from 'react';
 import {
   Box,
@@ -19,6 +20,8 @@ import EmployeeStatusHistory from './EmployeeStatusHistory';
 import { motion } from 'framer-motion';
 import EditIcon from '@mui/icons-material/Edit';
 import { useState, useRef } from 'react';
+import { uploadProfilePicture } from '@/api/profilePictures';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EmployeeProfileProps {
   employee: EmployeeProfileDTO;
@@ -30,7 +33,7 @@ const MotionBox = motion(Box);
 const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePictureUpdate }) => {
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
-
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,8 +42,20 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && onProfilePictureUpdate) {
-      await onProfilePictureUpdate(e.target.files[0]);
+    if (!e.target.files || !e.target.files[0]) return;
+
+    const file = e.target.files[0];
+    try {
+      if (onProfilePictureUpdate) {
+        await onProfilePictureUpdate(file);
+      } else {
+        await uploadProfilePicture(employee.id, file);
+        queryClient.invalidateQueries({
+          queryKey: ['employee', employee.id.toString()]
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update profile picture:', error);
     }
   };
 
@@ -69,17 +84,19 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
         >
           <Box position="relative">
             <Avatar
-              src={employee.profilePictureUrl}
+              src={employee.profilePicturePath
+                ? `/api/employees/${employee.id}/profile-picture?t=${Date.now()}`
+                : undefined}
               sx={{
                 width: isSmall ? 80 : 120,
                 height: isSmall ? 80 : 120,
                 boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                bgcolor: employee.profilePictureUrl ? undefined : theme.palette.primary.main,
+                bgcolor: employee.profilePicturePath ? undefined : theme.palette.primary.main,
                 fontSize: isSmall ? 32 : 48,
                 fontWeight: 'bold',
               }}
             >
-              {!employee.profilePictureUrl && employee.name.charAt(0).toUpperCase()}
+              {!employee.profilePicturePath && employee.name.charAt(0).toUpperCase()}
             </Avatar>
             {onProfilePictureUpdate && (
               <>
@@ -99,7 +116,7 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ employee, onProfilePi
                 </IconButton>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   style={{ display: 'none' }}

@@ -36,7 +36,7 @@ const ProductivityDashboard: React.FC<ProductivityDashboardProps> = ({ employeeI
           ).toLocaleDateString(),
           expected: (data.totalHoursWorked / daysInPeriod) * (i + 1),
           actual: (data.totalHoursWorked / daysInPeriod) * (i + 1) *
-            (0.8 + Math.random() * 0.4) // Simulate some variance
+            (0.8 + Math.random() * 0.4)
         }));
 
         setChartData(generatedData);

@@ -1,47 +1,25 @@
-// src/pages/tasks/TasksPage.tsx
 import React, { useEffect, useState } from 'react';
 import { Button, Container } from '@mui/material';
 import TaskList from '@/components/tasks/TaskList';
 import PageHeader from '@/components/common/PageHeader';
 import { useAuthStore } from '@/store/authStore';
-import { Task, TaskDTO } from '@/types';
 import Loading from '@/components/common/Loading';
 import { useNavigate } from 'react-router-dom';
 import { getTasks } from '@/api/tasks';
 import { notify } from '@/store/notificationService';
-
-const mapTaskDTOtoTask = (dto: TaskDTO): Task => {
-  if (!dto.id) {
-    throw new Error('Task ID is required');
-  }
-
-  return {
-    id: dto.id,
-    title: dto.title,
-    description: dto.description || '',
-    deadline: dto.deadline,
-    employeeId: dto.employeeId,
-    employeeName: dto.employeeName || '',
-    status: dto.status || 'PENDING',
-    expectedHours: dto.expectedHours || 0,
-    actualHours: dto.actualHours || 0,
-    totalWorkedMinutes: dto.totalWorkedMinutes || 0,
-    startTime: dto.startTime,
-    stopTime: dto.stopTime,
-    lastResumeTime: dto.lastResumeTime,
-    isValidated: dto.isValidated || false,
-    validationTime: dto.validationTime,
-    submitted: dto.submitted || false,
-    createdAt: dto.createdAt || new Date().toISOString(),
-    updatedAt: dto.updatedAt || new Date().toISOString(),
-  };
-};
+import { useConfirm } from 'material-ui-confirm';
+import { mapTaskDTOtoTask } from '@/utils/taskUtils';
+import { Task } from '@/types';
+import useTask from '@/hooks/useTask';
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const navigate = useNavigate();
   const { hasRole } = useAuthStore();
+  const confirm = useConfirm();
+  const { deleteTask } = useTask();
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -59,16 +37,33 @@ const TasksPage: React.FC = () => {
     fetchTasks();
   }, []);
 
-  const handleCreate = () => {
-    navigate('/tasks/create');
-  };
+  const handleCreate = () => navigate('/tasks/create');
+  const handleViewDetails = (id: number) => navigate(`/tasks/${id}`);
+  const handleEdit = (id: number) => navigate(`/tasks/${id}/edit`);
 
-  const handleViewDetails = (id: string) => {
-    navigate(`/tasks/${id}`);
-  };
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await confirm({
+        title: 'Delete Task',
+        description: 'This action cannot be undone. Are you sure?',
+        confirmationText: 'Delete',
+        cancellationText: 'Cancel',
+        confirmationButtonProps: { variant: 'contained', color: 'error' },
+        cancellationButtonProps: { variant: 'outlined' }
+      });
 
-  const handleEdit = (id: string) => {
-    navigate(`/tasks/${id}/edit`);
+      await deleteTask(id);
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+      notify('Task deleted successfully', 'success');
+    } catch (error) {
+      if (error !== 'cancel') {
+        notify('Failed to delete task', 'error');
+        console.error('Delete error:', error);
+      }
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (loading) {
@@ -96,11 +91,11 @@ const TasksPage: React.FC = () => {
         tasks={tasks}
         onViewDetails={handleViewDetails}
         onEdit={hasRole('ROLE_ADMIN') ? handleEdit : undefined}
-        onDelete={hasRole('ROLE_ADMIN') ? (id) => console.log('Delete', id) : undefined}
+        onDelete={hasRole('ROLE_ADMIN') ? handleDelete : undefined}
+        deletingId={deletingId}
       />
     </Container>
   );
 };
-
 
 export default TasksPage;

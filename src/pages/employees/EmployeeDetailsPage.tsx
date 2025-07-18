@@ -53,7 +53,7 @@ import {
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import EmployeeStatusHistory from '@/components/employees/EmployeeStatusHistory';
 import { notify } from '@/store/notificationService';
-import StatusUpdateDialog from '@/components/employees/StatusUpdateDialog';
+import StatusUpdateDialog from '@/components/common/StatusUpdateDialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ProfileHeader from '@/components/employees/ProfileHeader';
 import ConfirmationDialog from '@/components/common/ConfirmationDialog';

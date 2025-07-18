@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -12,12 +12,15 @@ import {
   CardContent,
   CircularProgress,
   Divider,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { EmployeeDTO } from '@/types';
 import { employeeSchema } from '@/validations/employeeValidation';
 import { departmentOptions } from '@/utils/departmentUtils';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 interface EmployeeFormProps {
   initialValues?: EmployeeDTO;
@@ -35,6 +38,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                                                      title = initialValues?.id ? 'Edit Employee' : 'Create Employee',
                                                    }) => {
   const theme = useTheme();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -64,6 +68,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       console.error('Submission error:', error);
     }
   };
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
+
 
   return (
     <motion.div
@@ -218,10 +231,24 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   <TextField
                     fullWidth
                     label="Password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     {...register('password')}
                     error={!!errors.password}
                     helperText={errors.password?.message}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleClickShowPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
               )}

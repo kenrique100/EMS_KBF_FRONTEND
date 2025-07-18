@@ -9,6 +9,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useAuthStore } from './store/authStore';
 import LoadingScreen from './components/common/LoadingScreen';
+import NotificationSnackbar from './components/common/NotificationSnackbar';
 
 const App: React.FC = () => {
   const initializeAuth = useAuthStore(state => state.initializeAuth);
@@ -35,6 +36,7 @@ const App: React.FC = () => {
         <CssBaseline />
         <NotificationProvider>
           <ErrorBoundary>
+            <NotificationSnackbar />
             <AppRoutes />
           </ErrorBoundary>
         </NotificationProvider>

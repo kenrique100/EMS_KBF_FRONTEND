@@ -1,39 +1,48 @@
 // src/pages/NotFoundPage.tsx
+import React from 'react';
 import { Button, Container, Typography, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { useNavigate } from 'react-router-dom';
 
-const NotFoundPage = () => {
-    const navigate = useNavigate();
+interface NotFoundPageProps {
+  error?: Error;
+  onRetry?: () => void;
+}
 
-    return (
-      <Container maxWidth="sm">
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            minHeight="60vh"
-            textAlign="center"
-          >
-              <ErrorOutlineIcon color="error" sx={{ fontSize: 80, mb: 2 }} />
-              <Typography variant="h3" gutterBottom>
-                  404 - Page Not Found
-              </Typography>
-              <Typography variant="body1" paragraph>
-                  The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => navigate('/')}
-                sx={{ mt: 3 }}
-              >
-                  Go to Homepage
-              </Button>
-          </Box>
-      </Container>
-    );
+const NotFoundPage: React.FC<NotFoundPageProps> = ({ error, onRetry }) => {
+  const navigate = useNavigate();
+
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    } else {
+      navigate('/');
+    }
+  };
+
+  return (
+    <Container maxWidth="sm">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        minHeight="60vh"
+        textAlign="center"
+      >
+        <ErrorOutlineIcon color="error" sx={{ fontSize: 80, mb: 2 }} />
+        <Typography variant="h4" gutterBottom>
+          {error ? 'Oops! Something went wrong.' : 'Page Not Found'}
+        </Typography>
+        <Typography color="text.secondary" paragraph>
+          {error ? error.message : 'The page you are looking for does not exist.'}
+        </Typography>
+        <Button variant="contained" color="primary" onClick={handleRetry}>
+          {error ? 'Retry' : 'Go Home'}
+        </Button>
+      </Box>
+    </Container>
+  );
 };
 
 export default NotFoundPage;
