@@ -82,7 +82,7 @@ export interface Employee {
 }
 
 export interface EmployeeDTO {
-  id?: number;
+  id: number;
   username: string;
   name: string;
   gender: Gender;
@@ -92,7 +92,7 @@ export interface EmployeeDTO {
   nationalId: string;
   department: Department;
   dateOfEmployment: string;
-  password?: string;
+  password: string;
   status?: EmployeeStatus;
   profilePicturePath?: string;
   statusExpiration?: string;
@@ -223,7 +223,6 @@ export interface TaskDTO {
   createdAt?: string;
   updatedAt?: string;
 }
-
 
 export interface SalaryPayment {
   id: number;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useNavigate } from 'react-router-dom';
 import {
   Button,
   Grid,
@@ -29,43 +30,93 @@ interface EmployeeFormProps {
   title?: string;
 }
 
-const MotionGrid = motion(Grid);
+// FIX: Use motion.create instead of motion()
+const MotionGrid = motion.create(Grid);
+const MotionCard = motion.create(Card);
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
-                                                     initialValues,
-                                                     onSubmit,
-                                                     isSubmitting,
-                                                     title = initialValues?.id ? 'Edit Employee' : 'Create Employee',
-                                                   }) => {
+  initialValues,
+  onSubmit,
+  isSubmitting,
+  title = initialValues?.id ? 'Edit Employee' : 'Create Employee',
+}) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<EmployeeDTO>({
     resolver: yupResolver(employeeSchema),
-    defaultValues: initialValues,
+    defaultValues: initialValues || {
+      username: '',
+      name: '',
+      gender: 'MALE',
+      dateOfBirth: '',
+      email: '',
+      phoneNumber: '',
+      nationalId: '',
+      department: 'ADMINISTRATION',
+      dateOfEmployment: '',
+      password: '',
+    },
   });
+
+  // Watch password to show strength indicator
+  const passwordValue = watch('password');
 
   useEffect(() => {
     if (initialValues) {
-      reset({
+      // Format dates for display (YYYY-MM-DD)
+      const formattedValues = {
         ...initialValues,
-        department: initialValues.department || '',
-        gender: initialValues.gender || '',
-        dateOfBirth: initialValues.dateOfBirth || '',
-      });
+        dateOfBirth: initialValues.dateOfBirth ? initialValues.dateOfBirth.split('T')[0] : '',
+        dateOfEmployment: initialValues.dateOfEmployment
+          ? initialValues.dateOfEmployment.split('T')[0]
+          : '',
+      };
+      reset(formattedValues);
     }
   }, [initialValues, reset]);
 
   const submitHandler = async (data: EmployeeDTO) => {
+    // Format dates to ensure they're in YYYY-MM-DD format
+    const formattedData = {
+      ...data,
+      dateOfBirth: formatDate(data.dateOfBirth),
+      dateOfEmployment: formatDate(data.dateOfEmployment),
+    };
+
+    console.log('Formatted data for submission:', formattedData);
+
     try {
-      await onSubmit(data);
+      await onSubmit(formattedData);
     } catch (error) {
       console.error('Submission error:', error);
+    }
+  };
+
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '';
+
+    // If already in YYYY-MM-DD format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return dateString;
     }
   };
 
@@ -77,6 +128,27 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     event.preventDefault();
   };
 
+  // Password strength indicator
+  const getPasswordStrength = (password: string) => {
+    if (!password) return { strength: 0, label: '' };
+
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[a-z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 15;
+    if (/[@#$%^&+=!]/.test(password)) strength += 10;
+
+    let label = '';
+    if (strength < 50) label = 'Weak';
+    else if (strength < 75) label = 'Fair';
+    else if (strength < 90) label = 'Good';
+    else label = 'Strong';
+
+    return { strength, label };
+  };
+
+  const passwordStrength = getPasswordStrength(passwordValue || '');
 
   return (
     <motion.div
@@ -101,19 +173,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
           <form onSubmit={handleSubmit(submitHandler)} noValidate>
             <Grid container spacing={3}>
-              <MotionGrid
-                item
-                xs={12}
-                md={6}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
+              <MotionGrid item xs={12} md={6} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <TextField
                   fullWidth
-                  label="Username"
+                  label="Username *"
                   {...register('username')}
                   error={!!errors.username}
                   helperText={errors.username?.message}
+                  required
                 />
               </MotionGrid>
 
@@ -127,71 +194,92 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               >
                 <TextField
                   fullWidth
-                  label="Full Name"
+                  label="Full Name *"
                   {...register('name')}
                   error={!!errors.name}
                   helperText={errors.name?.message}
+                  required
                 />
               </MotionGrid>
 
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Email"
+                  label="Email *"
                   type="email"
                   {...register('email')}
                   error={!!errors.email}
                   helperText={errors.email?.message}
+                  required
                 />
               </Grid>
 
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Phone Number"
+                  label="Phone Number *"
                   {...register('phoneNumber')}
                   error={!!errors.phoneNumber}
                   helperText={errors.phoneNumber?.message}
+                  required
                 />
               </Grid>
 
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="National ID"
+                  label="National ID *"
                   {...register('nationalId')}
                   error={!!errors.nationalId}
                   helperText={errors.nationalId?.message}
+                  required
                 />
               </Grid>
 
-              {/* Gender Field */}
               <Grid item xs={12} md={6}>
                 <TextField
                   select
                   fullWidth
-                  label="Gender"
+                  label="Gender *"
                   {...register('gender')}
                   error={!!errors.gender}
                   helperText={errors.gender?.message}
-                  defaultValue={initialValues?.gender || ''}
+                  required
                 >
                   <MenuItem value="MALE">Male</MenuItem>
                   <MenuItem value="FEMALE">Female</MenuItem>
                 </TextField>
               </Grid>
 
-              {/* Date of Birth Field */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   type="date"
-                  label="Date of Birth"
+                  label="Date of Birth *"
                   InputLabelProps={{ shrink: true }}
                   {...register('dateOfBirth')}
                   error={!!errors.dateOfBirth}
                   helperText={errors.dateOfBirth?.message}
-                  defaultValue={initialValues?.dateOfBirth || ''}
+                  required
+                  inputProps={{
+                    max: new Date().toISOString().split('T')[0],
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Date of Employment *"
+                  InputLabelProps={{ shrink: true }}
+                  {...register('dateOfEmployment')}
+                  error={!!errors.dateOfEmployment}
+                  helperText={errors.dateOfEmployment?.message}
+                  required
+                  inputProps={{
+                    max: new Date().toISOString().split('T')[0],
+                  }}
                 />
               </Grid>
 
@@ -199,11 +287,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 <TextField
                   select
                   fullWidth
-                  label="Department"
+                  label="Department *"
                   {...register('department')}
                   error={!!errors.department}
                   helperText={errors.department?.message}
-                  defaultValue={initialValues?.department || ''}
+                  required
                 >
                   {departmentOptions.map((dept) => (
                     <MenuItem key={dept.value} value={dept.value}>
@@ -213,48 +301,79 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                 </TextField>
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="Date of Employment"
-                  InputLabelProps={{ shrink: true }}
-                  {...register('dateOfEmployment')}
-                  error={!!errors.dateOfEmployment}
-                  helperText={errors.dateOfEmployment?.message}
-                  defaultValue={initialValues?.dateOfEmployment || ''}
-                />
-              </Grid>
-
               {!initialValues?.id && (
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    error={!!errors.password}
-                    helperText={errors.password?.message}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
+                <>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Password *"
+                      type={showPassword ? 'text' : 'password'}
+                      {...register('password')}
+                      error={!!errors.password}
+                      helperText={
+                        errors.password?.message ||
+                        `Strength: ${passwordStrength.label} (${passwordStrength.strength}%)`
+                      }
+                      required
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="toggle password visibility"
+                              onClick={handleClickShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                            >
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+
+                  {/* Password strength indicator */}
+                  {passwordValue && (
+                    <Grid item xs={12}>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 8,
+                          bgcolor: 'grey.200',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: `${passwordStrength.strength}%`,
+                            height: '100%',
+                            bgcolor:
+                              passwordStrength.strength < 50
+                                ? 'error.main'
+                                : passwordStrength.strength < 75
+                                  ? 'warning.main'
+                                  : passwordStrength.strength < 90
+                                    ? 'info.main'
+                                    : 'success.main',
+                            transition: 'width 0.3s ease',
+                          }}
+                        />
+                      </Box>
+                    </Grid>
+                  )}
+                </>
               )}
 
               <Grid item xs={12}>
-                <Box display="flex" justifyContent="flex-end" mt={3}>
+                <Box display="flex" justifyContent="flex-end" mt={3} gap={2}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate('/employees')}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     type="submit"
                     variant="contained"

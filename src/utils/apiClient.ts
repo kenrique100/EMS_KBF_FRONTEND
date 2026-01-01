@@ -1,4 +1,10 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
+// utils/apiClient.ts - Fix the TypeScript issue
+import axios, {
+  AxiosError,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+  AxiosRequestConfig,
+} from 'axios';
 import { notify } from '@/store/notificationService';
 import { useAuthStore } from '@/store/authStore';
 
@@ -50,13 +56,15 @@ apiClient.interceptors.request.use(
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  response => response,
+  (response: AxiosResponse) => response,
   async (error: AxiosError<ApiErrorResponse>) => {
-    const originalRequest = error.config as AxiosRequestConfig & {
-      _retry?: boolean;
-      skipAuthRefresh?: boolean;
-      skipErrorNotification?: boolean;
-    };
+    const originalRequest = error.config as
+      | (AxiosRequestConfig & {
+          _retry?: boolean;
+          skipAuthRefresh?: boolean;
+          skipErrorNotification?: boolean;
+        })
+      | undefined;
 
     // Ensure originalRequest exists
     if (!originalRequest) {
@@ -81,11 +89,15 @@ apiClient.interceptors.response.use(
         if (refreshed) {
           const newToken = useAuthStore.getState().getAccessToken();
           if (newToken) {
-            if (!originalRequest.headers) {
-              originalRequest.headers = {};
-            }
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return apiClient(originalRequest); // ✅ No TS error now
+            // Create a new config object to avoid TypeScript issues
+            const newConfig = {
+              ...originalRequest,
+              headers: {
+                ...originalRequest.headers,
+                Authorization: `Bearer ${newToken}`,
+              },
+            };
+            return apiClient(newConfig);
           }
         }
       } catch (refreshError) {

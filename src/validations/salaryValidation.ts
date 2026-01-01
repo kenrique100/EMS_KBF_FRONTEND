@@ -1,25 +1,35 @@
+// validations/salaryValidation.ts
 import * as yup from 'yup';
+import { SalaryPaymentDTO } from '@/types';
 
 export const salarySchema = yup.object().shape({
+  id: yup.number().optional(),
+
+  employeeId: yup.number().required('Employee is required').positive('Invalid employee selection'),
+
   amount: yup
     .number()
-    .positive('Amount must be positive')
     .required('Amount is required')
-    .test(
-      'decimal',
-      'Amount must have up to 2 decimal places',
-      value => !value || /^\d+(\.\d{1,2})?$/.test(value.toString())
-    ),
+    .positive('Amount must be greater than 0')
+    .typeError('Amount must be a number'),
+
   paymentDate: yup
     .string()
     .required('Payment date is required')
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-  employeeId: yup
-    .number()
-    .positive('Employee ID must be positive')
-    .required('Employee is required'),
-  paymentReference: yup
-    .string()
-    .nullable()
-    .max(50, 'Payment reference must be less than 50 characters'),
-});
+    .test('is-date', 'Invalid date format (use YYYY-MM-DD)', (value) => {
+      if (!value) return false;
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value));
+    })
+    .test('not-future', 'Payment date cannot be in the future', (value) => {
+      if (!value) return true;
+      const paymentDate = new Date(value);
+      const today = new Date();
+      return paymentDate <= today;
+    }),
+
+  paymentReference: yup.string().optional(),
+
+  employeeName: yup.string().optional(),
+  status: yup.string().optional(),
+  createdAt: yup.string().optional(),
+}) as yup.ObjectSchema<SalaryPaymentDTO>;

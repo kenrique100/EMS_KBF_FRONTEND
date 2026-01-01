@@ -1,3 +1,4 @@
+// api/salaries.ts
 import apiClient from '../utils/apiClient';
 import { SalaryPayment, SalaryPaymentDTO } from '@/types';
 
@@ -6,7 +7,9 @@ export const getSalaryPayments = async (): Promise<SalaryPayment[]> => {
   return response.data;
 };
 
-export const getSalaryPaymentsForEmployee = async (employeeId: number): Promise<SalaryPayment[]> => {
+export const getSalaryPaymentsForEmployee = async (
+  employeeId: number
+): Promise<SalaryPayment[]> => {
   const response = await apiClient.get(`/salaries/employee/${employeeId}`);
   return response.data;
 };
@@ -21,7 +24,10 @@ export const createSalaryPayment = async (salary: SalaryPaymentDTO): Promise<Sal
   return response.data;
 };
 
-export const updateSalaryPayment = async (id: number, salary: SalaryPaymentDTO): Promise<SalaryPayment> => {
+export const updateSalaryPayment = async (
+  id: number,
+  salary: SalaryPaymentDTO
+): Promise<SalaryPayment> => {
   const response = await apiClient.patch(`/salaries/${id}`, salary);
   return response.data;
 };
@@ -31,9 +37,9 @@ export const deleteSalaryPayment = async (id: number): Promise<void> => {
 };
 
 export const downloadSalaryReceipt = async (paymentId: number, preview = false): Promise<void> => {
-  const response = await apiClient.get(`/salaries/salary/${paymentId}/receipt/pdf`, {
+  const response = await apiClient.get(`/salaries/${paymentId}/receipt/pdf`, {
     params: { preview },
-    responseType: 'blob' // Important for file downloads
+    responseType: 'blob',
   });
 
   // Create download link
@@ -56,4 +62,10 @@ export const downloadSalaryReceipt = async (paymentId: number, preview = false):
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+};
+
+// Add a new function to get the receipt data
+export const getSalaryReceipt = async (paymentId: number): Promise<any> => {
+  const response = await apiClient.get(`/salaries/${paymentId}/receipt`);
+  return response.data;
 };
