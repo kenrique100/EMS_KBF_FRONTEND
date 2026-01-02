@@ -37,7 +37,7 @@ export const deleteSalaryPayment = async (id: number): Promise<void> => {
 };
 
 export const downloadSalaryReceipt = async (paymentId: number, preview = false): Promise<void> => {
-  const response = await apiClient.get(`/salaries/${paymentId}/receipt/pdf`, {
+  const response = await apiClient.get(`/salaries/salary/${paymentId}/receipt/pdf`, {
     params: { preview },
     responseType: 'blob',
   });
@@ -66,6 +66,6 @@ export const downloadSalaryReceipt = async (paymentId: number, preview = false):
 
 // Add a new function to get the receipt data
 export const getSalaryReceipt = async (paymentId: number): Promise<any> => {
-  const response = await apiClient.get(`/salaries/${paymentId}/receipt`);
+  const response = await apiClient.get(`/salaries/salary/${paymentId}/receipt`);
   return response.data;
 };
